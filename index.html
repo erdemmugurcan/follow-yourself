@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Follow Yourself</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Follow Yourself">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: tek sütunlu telefon uygulaması; açılışta logo ekranı, üstte başlık, altta sabit 5 sekmeli gezinme.
+   Renkler kullanıcının paletinden: Thunder Lime #E5E12C, Midnight Slate #40494E, Silver Mist #D9D9D6, siyah, beyaz. */
+:root{
+  padding-top:env(safe-area-inset-top,0px);
+  --lime:#E5E12C; --on-lime:#000000; --slate:#40494E; --mist:#D9D9D6;
+  --bg:#F2F2F0; --surface:#FFFFFF; --ink:#000000; --muted:#40494E; --line:#D9D9D6; --field:#F2F2F0;
+  --accent:#000000; --lime-soft:#F4F3B8; --nav:#000000; --nav-ink:#D9D9D6;
+  --warn:#9A5208; --warn-soft:#FBEEDD; --good:#24703F;
+  --body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:16px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#000000; --surface:#1A1E21; --ink:#FFFFFF; --muted:#A3A9AC; --line:#40494E; --field:#0E1113;
+  --accent:#E5E12C; --lime-soft:#2B2C0E; --nav:#111416; --nav-ink:#A3A9AC;
+  --warn:#F0A85A; --warn-soft:#33261A; --good:#7FD39B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#1A1E21; --ink:#FFFFFF; --muted:#A3A9AC; --line:#40494E; --field:#0E1113;
+  --accent:#E5E12C; --lime-soft:#2B2C0E; --nav:#111416; --nav-ink:#A3A9AC;
+  --warn:#F0A85A; --warn-soft:#33261A; --good:#7FD39B; color-scheme:dark}
+html{-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.5}
+img{max-width:100%}
+[hidden]{display:none!important}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:4px 120px}
+h1,h2,h3{font-family:var(--body);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:700}
+h2{font-size:18px;font-weight:700;line-height:1.3}
+h3{font-size:15px;font-weight:600;line-height:1.35}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding-block:6px}
+header.top .brand{height:22px;width:auto;display:block}
+.sync{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--good)} .dot.busy{background:var(--warn)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.between{justify-content:space-between}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;min-height:40px;padding:8px 14px;font-weight:500;font-size:13.5px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:var(--bg);font-weight:600}
+.btn.danger{background:#C2352B;border-color:#C2352B;color:#fff;font-weight:600}
+.big-btn{width:100%;min-height:52px;font-size:15px;border-radius:14px}
+.btn.primary{background:var(--lime);border-color:var(--lime);color:var(--on-lime);font-weight:600}
+.btn.ghost{background:transparent}
+.btn.icon{width:42px;height:42px;min-height:0;padding:0;display:grid;place-items:center;font-size:18px}
+.weeknav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.weeknav .mid{text-align:center;min-width:0}
+.weeknav .mid b{font-size:16px;font-weight:700;display:block;line-height:1.3}
+/* gün şeridi */
+.strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.day{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 1px;min-height:52px;text-align:center;line-height:1.15;position:relative;min-width:0}
+.day b{display:block;font-size:13.5px;font-weight:700}
+.day span{font-size:9.5px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.day.sel{border-color:var(--lime);background:var(--lime);color:var(--on-lime)}
+.day.sel span{color:var(--on-lime);opacity:.75}
+.day.today:not(.sel) b{text-decoration:underline;text-decoration-color:var(--lime);text-decoration-thickness:3px;text-underline-offset:3px}
+.day.done::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--good)}
+.day.sel.done::after{background:var(--on-lime)}
+/* hareket kartı */
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.ex-head{display:flex;gap:10px;align-items:flex-start}
+.ex-no{font-weight:700;font-size:13px;color:var(--on-lime);background:var(--lime);width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;margin-top:1px}
+.ex-head .t{flex:1;min-width:0}
+.target{font-weight:700;font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sets{display:grid;grid-template-columns:44px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
+.sets .h{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.sets .sn{font-size:12.5px;color:var(--muted);width:42px}
+.in{width:100%;min-width:0;min-height:44px;border:1px solid var(--line);background:var(--field);border-radius:12px;padding:9px 12px;font-variant-numeric:tabular-nums;font-size:16px}
+.in::placeholder{color:var(--muted);opacity:.6}
+.in:focus{border-color:var(--lime);outline:none;box-shadow:0 0 0 2px var(--lime)}
+textarea.in{font-size:14px;resize:vertical;min-height:38px}
+.hint{font-size:12.5px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 10px;background:var(--lime-soft);color:var(--ink)}
+.pill.up{background:var(--lime);color:var(--on-lime)}
+a.vid{font-size:12.5px;color:var(--ink);text-decoration:underline;text-decoration-color:var(--lime);text-decoration-thickness:2px;text-underline-offset:3px;font-weight:600}
+.section-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:6px}
+details.card summary{cursor:pointer;font-weight:600}
+details.card[open] summary{margin-bottom:8px}
+.rules{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13.5px}
+.rules dt{font-weight:600}
+.rules dd{margin:0;color:var(--muted)}
+.check{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-weight:600}
+.check input{width:20px;height:20px;accent-color:var(--lime)}
+/* beslenme */
+.meal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.meal.now{border-color:var(--lime);box-shadow:0 0 0 1px var(--lime) inset}
+.meal.eaten{opacity:.7}
+.meal-time{font-weight:600;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meal.now .meal-time::after{content:"Şimdi";margin-left:8px;font-size:10.5px;background:var(--lime);color:var(--on-lime);border-radius:999px;padding:1px 8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 12px;font-size:13px}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+ul.items{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
+.eat{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
+.eat input{width:20px;height:20px;accent-color:var(--lime)}
+.water{display:flex;gap:4px;flex-wrap:wrap}
+.glass{width:30px;height:38px;border:1.5px solid var(--muted);border-radius:4px 4px 9px 9px;background:transparent;padding:0}
+.glass.on{background:var(--lime);border-color:var(--lime)}
+.warnbox{font-size:12.5px;background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:7px 11px}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mgrid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500}
+/* ölçü & foto */
+.bodywrap{display:flex;flex-direction:column;gap:14px}
+.figure{width:min(100%,230px);margin-inline:auto}
+.figure svg{width:100%;height:auto;display:block}
+.figure .sil{fill:var(--field);stroke:var(--muted);stroke-width:1.6}
+.figure .det path{fill:none;stroke:var(--muted);stroke-width:1.1;opacity:.55}
+.figure .mline{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.figure .mk circle{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+.figure .mk text{font-size:11px;font-weight:700;fill:var(--ink);font-family:var(--body)}
+.figure .mk.on circle{fill:var(--lime);stroke:var(--on-lime)}
+.figure .mk.on text{fill:var(--on-lime)}
+.figure .mk.cur circle{stroke-width:3}
+.figure .mk{cursor:pointer}
+.mlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.mrow{display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-areas:"no nm" "in in";gap:6px 8px;align-items:center}
+.mrow .unit{grid-area:in}
+.mrow .nm{grid-area:nm}
+.mrow .no{grid-area:no;width:20px;height:20px;border-radius:50%;border:1.4px solid var(--ink);display:grid;place-items:center;font-size:10px;font-weight:700}
+.mrow.on .no{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.mrow .nm{font-size:12.5px;font-weight:500;line-height:1.2;white-space:nowrap}
+.mrow .nm .d{display:inline;margin-left:6px;font-size:11px;font-weight:500}
+.unit{position:relative}
+.unit .in{padding-right:30px;padding-block:6px;min-height:40px}
+.unit em{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-style:normal;font-size:11px;color:var(--muted)}
+.kilo-row{display:grid;grid-template-columns:minmax(0,1fr) 140px;gap:12px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.slot{aspect-ratio:3/4;max-width:100%;border:1.5px dashed var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;font-size:12px;color:var(--muted);position:relative;overflow:hidden;background:var(--field);cursor:pointer}
+.slot svg.ghost{height:62%;width:auto;opacity:.85}
+.slot svg.ghost .sil{fill:var(--surface);stroke:var(--muted);stroke-width:2.2}
+.slot svg.ghost .det path{fill:none;stroke:var(--muted);stroke-width:1.4;opacity:.5}
+.slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.slot .cap{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;padding:3px}
+.slot input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.slot .del{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:26px;padding:0;z-index:2}
+.gal-week{display:flex;flex-direction:column;gap:6px}
+.thumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.thumbs img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;cursor:zoom-in;display:block}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:grid;place-items:center;z-index:50;padding:20px}
+.lightbox img{max-height:88vh;max-width:100%;border-radius:10px}
+/* grafik */
+.chart svg{width:100%;height:auto;display:block}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .axis{fill:var(--muted);font-size:10px;font-family:var(--body)}
+.chart .ln{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.chart .ar{fill:var(--lime);opacity:.28}
+.chart .pt{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.chart .pt.last{fill:var(--lime);stroke:var(--ink)}
+.chart .vl{fill:var(--ink);font-size:11px;font-weight:600;font-family:var(--body)}
+select.in{font-size:15px}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+.tbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.empty{text-align:center;color:var(--muted);padding:20px 12px;font-size:13.5px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.stat b{font-size:21px;font-weight:700;display:block;font-variant-numeric:tabular-nums}
+/* özet */
+.hello{display:flex;flex-direction:column;gap:2px}
+.hello .date{font-size:12.5px;color:var(--muted);font-weight:500}
+.quote{background:var(--lime);color:var(--on-lime);border-radius:18px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.quote .q{font-size:17px;font-weight:600;line-height:1.42;text-wrap:pretty;position:relative}
+.quote .src{font-size:11.5px;font-weight:500;opacity:.75;position:relative}
+.quote .mark{position:absolute;right:-6px;top:-34px;font-size:150px;font-weight:800;line-height:1;opacity:.12}
+.kpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kpi .card{display:flex;flex-direction:column;gap:6px;min-width:0}
+.big{font-size:30px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big small{font-size:14px;font-weight:600;color:var(--muted);margin-left:3px}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--lime);border-radius:99px}
+.wkdots{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.wkdots div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:var(--muted)}
+.wkdots i{width:100%;max-width:30px;aspect-ratio:1;border-radius:9px;border:1.5px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;color:var(--ink)}
+.wkdots i.done{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.wkdots i.rest{border-style:dashed}
+.wkdots i.today{border-color:var(--ink)}
+.todaycard{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.go{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px;border:0;background:var(--ink);color:var(--bg);border-radius:999px;padding:8px 14px;white-space:nowrap}
+/* gezinme */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--nav);padding:6px 8px calc(8px + env(safe-area-inset-bottom,0px));z-index:20}
+nav.tabs .in-nav{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}
+nav.tabs button{border:0;background:transparent;padding:7px 0;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:600;color:var(--nav-ink);min-width:0}
+nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+nav.tabs button.on{color:var(--on-lime);background:var(--lime)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:12.5px;z-index:40;white-space:nowrap}
+/* hafta başlığı ve geçmiş */
+.weekhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.weekhead b{display:block;font-size:22px;font-weight:700;line-height:1.15;letter-spacing:-.01em}
+.weekhead .label{display:inline-flex;align-items:center;gap:6px}
+.weekhead:not(.past) .label::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 2px var(--ink)}
+.wk-range{font-size:12.5px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;white-space:nowrap}
+.pastbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--warn-soft);color:var(--warn);border-radius:14px;padding:10px 12px;font-size:12.5px;font-weight:500}
+.pastbar .btn{white-space:nowrap;flex:none}
+.hist summary{display:flex;align-items:center;gap:6px}
+.hist-list{display:flex;flex-direction:column}
+.hist-item{display:grid;grid-template-columns:1fr auto 16px;gap:10px;align-items:center;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);padding:12px 2px;font-size:13.5px}
+.hist-item span{color:var(--muted);font-size:12.5px}
+.hist-item.on b{text-decoration:underline;text-decoration-color:var(--lime);text-decoration-thickness:3px;text-underline-offset:3px}
+/* antrenman oturumu */
+.session{display:flex;flex-direction:column;gap:12px}
+.session.on{background:var(--lime-soft);border:1px solid var(--lime);border-radius:var(--r);padding:14px 16px}
+.sess-res{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sess-res>div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.sess-res b{font-size:18px;font-weight:700}
+.live{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;display:flex;align-items:center;gap:12px;background:var(--lime);color:var(--on-lime);border-radius:16px;padding:10px 10px 10px 16px;margin-bottom:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.live .lt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.live .lt b{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.live .lt span{font-size:12px;font-weight:500;opacity:.8}
+.live .btn{background:#000;border-color:#000;color:#fff}
+.live .btn.danger{background:#C2352B;border-color:#C2352B}
+.rec{width:10px;height:10px;border-radius:50%;background:#000;flex:none}
+@media (prefers-reduced-motion: no-preference){.rec{animation:blink 1.2s infinite}@keyframes blink{50%{opacity:.25}}}
+.restrow{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:12px}
+.rbtn{min-height:40px;border-radius:12px;border:1.5px solid var(--ink);background:transparent;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.rbtn:active{background:var(--lime);border-color:var(--lime);color:var(--on-lime)}
+.restov{position:fixed;left:0;right:0;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:30;padding-inline:12px;display:flex;justify-content:center}
+.rest-card{width:100%;max-width:536px;background:#000;color:#fff;border-radius:20px;padding:12px 14px;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.35);border:1px solid #40494E}
+.ring{width:64px;height:64px;transform:rotate(-90deg)}
+.ring .trk{fill:none;stroke:#40494E;stroke-width:9}
+.ring .prg{fill:none;stroke:#E5E12C;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
+.rest-info{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.rest-info .label{color:#A3A9AC}
+.rest-info b{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.rest-info .small{color:#D9D9D6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rest-btns{display:flex;flex-direction:column;gap:6px}
+.rest-btns .btn{min-height:36px;padding:6px 12px;background:#1A1E21;border-color:#40494E;color:#fff}
+.rest-btns .btn.dark{background:#E5E12C;border-color:#E5E12C;color:#000}
+.restov.fin .rest-card{background:#E5E12C;color:#000;border-color:#E5E12C}
+.restov.fin .rest-info .label,.restov.fin .rest-info .small{color:#000}
+.restov.fin .ring .prg{stroke:#000}.restov.fin .ring .trk{stroke:#000;opacity:.2}
+@media (prefers-reduced-motion: no-preference){.restov:not([hidden]) .rest-card{animation:pop .25s ease-out}@keyframes pop{from{transform:translateY(20px);opacity:0}}.restov.fin .rest-card{animation:pulse .5s ease-in-out 3}@keyframes pulse{50%{transform:scale(1.03)}}}
+/* açılış ekranı */
+#splash{position:fixed;inset:0;z-index:100;background:#FFFFFF;display:grid;place-items:center;padding:32px}
+#splash .lg{position:relative;width:min(78vw,340px)}
+#splash img{display:block;width:100%;height:auto}
+#splash .lg-dark{display:none}
+#splash .sweep{position:absolute;left:0;bottom:-14px;height:6px;width:100%;background:#E5E12C;border-radius:9px;transform-origin:left;transform:scaleX(0)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #splash{background:#000}:root:not([data-theme="light"]) #splash .lg-light{display:none}:root:not([data-theme="light"]) #splash .lg-dark{display:block}}
+:root[data-theme="dark"] #splash{background:#000} :root[data-theme="dark"] #splash .lg-light{display:none} :root[data-theme="dark"] #splash .lg-dark{display:block}
+@media (prefers-reduced-motion: no-preference){
+  #splash .lg{animation:lgIn .9s cubic-bezier(.2,.8,.2,1) both}
+  #splash .sweep{animation:sweep .55s .75s cubic-bezier(.6,0,.2,1) forwards}
+  #splash.out{animation:spOut .45s cubic-bezier(.6,0,.4,1) forwards}
+  @keyframes lgIn{from{clip-path:inset(0 100% 0 0);transform:translateX(-10px)}to{clip-path:inset(0 0 0 0);transform:none}}
+  @keyframes sweep{to{transform:scaleX(1)}}
+  @keyframes spOut{to{transform:translateY(-100%)}}
+  .ex,.meal{transition:border-color .15s}
+}
+@media (prefers-reduced-motion: reduce){ #splash .sweep{transform:scaleX(1)} #splash.out{opacity:0;transition:opacity .3s} }
+</style>
+</head><body>
+<div id="splash" aria-hidden="true"><div class="lg"><img class="lg-light" src="logo-light.png" alt=""><img class="lg-dark" src="logo-dark.png" alt=""><span class="sweep"></span></div></div>
+<div class="wrap">
+  <header class="top">
+    <h1 id="ttl">Özet</h1>
+    <div class="sync" id="sync"><span class="dot" id="syncdot"></span><span id="synctxt">Açılıyor…</span></div>
+  </header>
+  <div id="live" class="live" hidden></div>
+  <main id="view"></main>
+</div>
+<div id="rest" class="restov" hidden></div>
+<nav class="tabs" aria-label="Bölümler"><div class="in-nav">
+  <button data-tab="home" id="tab-home"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>Özet</button>
+  <button data-tab="train" id="tab-train"><svg viewBox="0 0 24 24"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12"/></svg>Antrenman</button>
+  <button data-tab="food" id="tab-food"><svg viewBox="0 0 24 24"><path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v6M9 3v6M17 21V3c-2 1-3 4-3 7s1 4 3 4"/></svg>Beslenme</button>
+  <button data-tab="progress" id="tab-progress"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 16l5-5 4 3 6-7"/></svg>Gelişim</button>
+  <button data-tab="body" id="tab-body"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><path d="M8 9h8l-1 6h-1.5l-.5 6h-2l-.5-6H9z"/></svg>Vücut</button>
+</div></nav>
+<script>
+/* ===================== PROGRAM VERİSİ (PDF'lerden) ===================== */
+const yt = q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q + " form");
+const E = (id,n,rep,tip,o={}) => { const [lo,hi]=rep.split("–").map(Number); return {id,n,sets:3,rep,lo,hi:hi||lo,tip,kind:"w",...o}; };
+const DAYS = [
+ {k:1,s:"Pzt",n:"Pazartesi",type:"İtme",focus:"Düz göğüs, ön ve yan omuz, triceps, quad",warm:"Face pull 2 × 15 (hafif ağırlık, kablo göz hizasında, dirsekler yukarıda)",ex:[
+  E("chest-press","Plate Loaded Chest Press","6–10","Günün ana hareketi. Altta göğsü ger, iterken nefes ver."),
+  E("smith-incline","Smith Machine Low Incline Press","6–10","15–30° eğim, üst göğüs. Bar köprücük kemiğinin altına insin."),
+  E("shoulder-press","Shoulder Press Machine","6–10","Haftanın tek ön omuz press'i."),
+  E("db-lateral","Dumbbell Lateral Raise","10–15","Hafif öne eğil, dirsek önde. Omzu kulağa doğru kaldırma."),
+  E("oh-triceps","Overhead Cable Triceps Extension","8–12","Halatla, makineye sırtın dönük. Altta triceps tam gerilsin."),
+  E("leg-press","Leg Press","8–10","Derin in; kalça koltuktan kalkmasın."),
+  E("leg-ext","Leg Extension","10–12","Hareketin alt yarısına, diz bükükken odaklan.")]},
+ {k:2,s:"Sal",n:"Salı",type:"Çekme",focus:"Sırt, biceps, hamstring, barfiks",warm:"Band pull apart 2 × 15 (kollar düz, kürek kemiklerini yaklaştır)",pull:"sal",ex:[
+  E("lat-pulldown","Lat Pulldown","6–10","Omuz genişliği veya nötr tutuş. Üstte tam uzan, lat'ı ger."),
+  E("cs-row","Chest-Supported Row","8–10","Göğüs pede dayalı, bel yorulmaz. Önde tam uzan, dirseği arkaya sür."),
+  E("preacher","Preacher Curl","8–10","Altta kolu tamamen aç."),
+  E("hammer","Hammer Curl","8–10","Brachialis ve ön kol."),
+  E("rdl","Romanian Deadlift","8–10","Kalçayı geri it, sırt düz. Hamstring gerilince yukarı dön."),
+  E("leg-curl","Seated Leg Curl","8–10","Oturarak yapılan versiyon yatarak olandan daha etkili."),
+  E("cable-crunch","Cable Crunch","10–12","Kontrollü, ağırlıkla ilerle.")]},
+ {k:3,s:"Çar",n:"Çarşamba",type:"Dinlenme",focus:"Hafif yürüyüş",rest:"30–45 dk hafif yürüyüş yapılabilir. Ağırlık yok.",ex:[]},
+ {k:4,s:"Per",n:"Perşembe",type:"İtme",focus:"Üst göğüs, yan ve arka omuz, triceps, abductor/adductor",warm:"Face pull 2 × 15",ex:[
+  E("incline-db","Incline Dumbbell Press","8–10","30° eğim. Altta dumbbell'lar göğüs hizasının biraz altına insin."),
+  E("pec-deck","Pec Deck","10–12","Kollar hafif bükük, geride tam gerilme. Önde 1 sn sık."),
+  E("cable-lateral","Cable Lateral Raise","12–15","Tek kol, ayakta; kablo vücudun önünden."),
+  E("reverse-pec","Reverse Pec Deck","12–15","Arka omuz. Kürek kemiklerini sıkma, hareketi kolla yap."),
+  E("pushdown","Triceps Pushdown","8–10","Dirsekler gövdeye yapışık kalsın."),
+  E("abductor","Hip Abductor","10–12","Dışa açma; gluteus medius."),
+  E("adductor","Hip Adductor","10–12","İçe kapama; iç uyluk."),
+  E("cable-crunch","Cable Crunch","10–12","Kontrollü core.")]},
+ {k:5,s:"Cum",n:"Cuma",type:"Çekme",focus:"Sırt, biceps, tam bacak, barfiks",warm:"Band pull apart 2 × 15",pull:"cum",
+  note:"Cuma haftanın en ağır bacak günü ve ertesi gün CrossFit var. 4. haftadan sonra bile bacak hareketlerini 2 tekrar kala bitir.",ex:[
+  E("sa-pulldown","Tek Kol Cable Pulldown","8–12","Diz çökerek. Üstte kolu tam uzat, dirseği kalçaya doğru çek."),
+  E("seated-row","Seated Cable Row","8–10","Önde omuzları öne bırak, tam gerilme. Gövde sabit."),
+  E("incline-curl","Incline Dumbbell Curl","8–12","45–60° bench, kollar geride sarkık."),
+  E("leg-press","Leg Press","8–10","Derin in; kalça koltuktan kalkmasın."),
+  E("leg-ext","Leg Extension","10–12","Alt yarıya odaklan."),
+  E("leg-curl","Seated Leg Curl","8–10","Kontrollü, altta tam uzat."),
+  E("cable-crunch","Cable Crunch","10–12","Kontrollü core.")]},
+ {k:6,s:"Cmt",n:"Cumartesi",type:"CrossFit",focus:"Opsiyonel kondisyon, yorgunluğa göre karar ver",wod:true,ex:[]},
+ {k:7,s:"Paz",n:"Pazar",type:"Dinlenme",focus:"Tam dinlenme",rest:"Tam dinlenme. Ağırlık yok.",ex:[]}
+];
+const WOD = {
+ 1:{t:"WOD 1 · 15 dakikada olabildiğince çok tur",sub:"Tek haftalar. 3–4 turla başla, her hafta bir tur fazlasını hedefle.",unit:"tur",items:["Kettlebell Swing · 10 tekrar (12–16 kg, güç kalçadan)","Ring Row · 10 tekrar","Box Step-Up · bacak başı 10 tekrar","Kürek · 250 m"]},
+ 2:{t:"WOD 2 · 4 tur, süreye karşı",sub:"Çift haftalar. İlk haftalarda 18–22 dk normal; hedef 14–16 dk.",unit:"süre (dk:sn)",items:["Goblet Squat · 12 tekrar","Dumbbell Push Press · 10 tekrar","Ring Row · 8 tekrar","Sit-Up · 12 tekrar","Kürek · 250 m"]}
+};
+function pullPlan(week, day){ // barfiks yol haritası
+  const fri = day==="cum";
+  if(week<=4) return {ph:"1–4. hafta · kalın bant",items:[
+    {id:"bf-hang",n:"Dead Hang",rep:fri?"25–30 sn":"20–30 sn",unit:"sn"},
+    {id:"bf-scap",n:"Scapular Pull",rep:fri?"3 × 10":"3 × 8–10",unit:"tekrar"},
+    {id:"bf-band",n:"Band Assisted Pull-up",rep:fri?"3 × 6–8 (bir adım ince bant)":"3 × 5–8",unit:"tekrar"}]};
+  if(week<=8) return {ph:"5–8. hafta · daha ince bant",items:[
+    {id:"bf-hang",n:"Dead Hang",rep:"3 × 30 sn",unit:"sn"},
+    {id:"bf-scap",n:"Scapular Pull",rep:"3 × 12",unit:"tekrar"},
+    {id:"bf-band",n:"Band Assisted Pull-up",rep:"3 × 6–8",unit:"tekrar"}]};
+  if(week<=12) return {ph:"9–12. hafta",items:[
+    {id:"bf-neg",n:"Negatif Pull-up",rep:"3 × 5 (5 sn'de in)",unit:"tekrar"},
+    {id:"bf-band",n:"Band Assisted Pull-up (en ince bant)",rep:"3 × 8",unit:"tekrar"}]};
+  return {ph:"13–16. hafta ve sonrası · hedef ilk bantsız tekrar",items:[
+    {id:"bf-pull",n:"Bantsız Pull-up",rep:"1–3 set, yapabildiğin kadar",unit:"tekrar"}]};
+}
+const RULES = [
+ ["Yoğunluk","1–3. hafta her seti failure'a 2–3 tekrar kala bitir. 4. haftadan itibaren 1 tekrar kala."],
+ ["Dinlenme","Bileşik hareketlerde 2–3 dk, izolasyonda 60–90 sn."],
+ ["İlerleme","Tüm setlerde tekrar aralığının üst sınırına ulaşınca bir sonraki seansta ağırlığı artır."],
+ ["Tam gerilme","Kasın en gerili olduğu noktayı kısaltma: press'te altta, fly'da geride, pulldown'da üstte, row'da önde, curl'de altta."],
+ ["Nefes","Ağır setlerde iterken ya da çekerken nefes ver, nefesini tutma."],
+ ["Kalori açığı","Amaç kası korumak. Ağırlıklar birkaç hafta sabit kalırsa normal; düşmüyorsa program çalışıyor."],
+ ["Ölçüm","Her pazartesi sabah, tuvaletten sonra aç karna tartı ve bel ölçümü."]
+];
+const MEALS = [
+ {id:"wake",t:"Uyanınca",h:[6,0],n:"Sabah kahvesi",opts:[{n:"Standart",it:["1 bardak sade kahve","1 çay kaşığı hindistan cevizi yağı"]}]},
+ {id:"bf",t:"08.00–09.00",h:[8,0],n:"Kahvaltı",opts:[
+   {n:"Menü 1",it:["3 yumurta ile omlet / menemen","40 g yulaf (omlete ekle)","1 tatlı kaşığı zeytinyağı","Salatalık, yeşillik"]},
+   {n:"Menü 2",it:["3 haşlanmış yumurta","2 ince dilim tam buğday ekmek","Salatalık, yeşillik","4 zeytin"]},
+   {n:"Hızlı",it:["1 servis rice cream","1 ölçek protein tozu","Sıcak su veya 200 ml şekersiz yulaf/badem sütü"]},
+   {n:"Geceden krep",it:["3 tam yumurta + 40 g yulaf + 1 tatlı kaşığı zeytinyağı, tavada krep","İsteğe bağlı 1 tatlı kaşığı şekersiz fıstık ezmesi"]}]},
+ {id:"lunch",t:"12.00–12.30",h:[12,0],n:"Öğle yemeği",note:"Her 20 g pilav yerine 1 dilim tam buğday tost ekmeği yenebilir (üst üste yapma).",opts:[
+   {n:"Kıyma",it:["200 g yağsız kıyma (çiğ; köfte olabilir)","60 g basmati pirinç / tam buğday makarna (çiğ)","Mevsim salata","1 yemek kaşığı zeytinyağı"]},
+   {n:"Tavuk / hindi",it:["200 g göğüs tavuk / hindi (çiğ)","60 g basmati pirinç / tam buğday makarna (çiğ)","Mevsim salata","1 yemek kaşığı zeytinyağı"]},
+   {n:"Balık / somon",it:["240 g ızgara balık / somon (çiğ)","60 g basmati pirinç / tam buğday makarna (çiğ)","Mevsim salata","1 yemek kaşığı zeytinyağı"]}]},
+ {id:"snack1",t:"15.30–16.00",h:[15,30],n:"Ara öğün",noRepeat:true,opts:[
+   {n:"Menü 1",it:["Mevsim salata","100 g haşlanmış barbunya / kuru fasulye","1 tatlı kaşığı zeytinyağı"]},
+   {n:"Menü 2",it:["Mevsim salata","75 g yağı süzülmüş ton balığı"]},
+   {n:"Menü 3",it:["Mevsim salata","1 konserve süzülmüş hindi fileto"]}]},
+ {id:"dinner",t:"19.00–19.30",h:[19,0],n:"Akşam yemeği",opts:[
+   {n:"Kıyma",it:["130 g yağsız kıyma (çiğ)","50 g basmati pirinç / tam buğday makarna (çiğ)","Mevsim salata","1 tatlı kaşığı zeytinyağı"]},
+   {n:"Tavuk / hindi",it:["150 g göğüs tavuk / hindi (çiğ)","50 g basmati pirinç / tam buğday makarna (çiğ)","Mevsim salata","1 tatlı kaşığı zeytinyağı"]},
+   {n:"Baklagil",it:["200 g haşlanmış Meksika fasulyesi / barbunya / kuru fasulye","50 g basmati pirinç / tam buğday makarna (çiğ)","Mevsim salata","1 tatlı kaşığı zeytinyağı"]}]},
+ {id:"snack2",t:"21.30–22.00",h:[21,30],n:"Gece ara öğünü",note:"Yatmadan en geç 2 saat önce.",opts:[
+   {n:"Yoğurt",it:["100 ml Activia sade probiyotik yoğurt (salatalık-nane ile cacık olabilir)","1 tatlı kaşığı zeytinyağı"]}]}
+];
+const FOOD_NOTES = ["Salatada mısır, havuç ve nar ekşisi yok.","Zeytinyağını yemek piştikten sonra ekle.","Antrenmanı yemekten 1 saat sonra veya yemekten 45 dk önce yap.","Hızlı bir metabolizma için öğün atlama."];
+const WATER_GOAL = 14; // 14 × 250 ml = 3,5 L
+const PHOTO_SLOTS = [["on","Ön"],["arka","Arka"],["sag","Sağ"],["sol","Sol"]];
+
+/* ===================== TARİH YARDIMCILARI ===================== */
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d=parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const monday = s => { const d=parse(s); const w=(d.getDay()+6)%7; d.setDate(d.getDate()-w); return iso(d); };
+let TODAY = iso(new Date());
+const AY = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+const fmt = s => { const d=parse(s); return d.getDate()+" "+AY[d.getMonth()]; };
+const weekRange = w => fmt(w)+" – "+fmt(addDays(w,6));
+const progWeek = w => Math.round((parse(w)-parse(monday(state.settings.start||TODAY)))/864e5/7)+1;
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ===================== VERİ KATMANI (telefonda, IndexedDB) ===================== */
+const state = { logs:{}, body:{}, daily:{}, settings:{}, photoUrls:{} };
+let idb=null;
+function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open("form-defteri",1);
+  r.onupgradeneeded=()=>{ r.result.createObjectStore("kv"); r.result.createObjectStore("photos"); };
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function tx(store,mode,fn){ return new Promise((res,rej)=>{ const t=idb.transaction(store,mode); const s=t.objectStore(store); const out=fn(s);
+  t.oncomplete=()=>res(out&&out.result); t.onerror=()=>rej(t.error); }); }
+const dataObj = () => ({logs:state.logs,body:state.body,daily:state.daily,settings:state.settings});
+let saveT=null;
+function save(){ clearTimeout(saveT); setSync("busy","Kaydediliyor…"); saveT=setTimeout(async()=>{
+  try{ await tx("kv","readwrite",s=>s.put(JSON.parse(JSON.stringify(dataObj())),"data")); setSync("ok","Telefonda kayıtlı"); }
+  catch(e){ setSync("","Kaydedilemedi"); toast("Kaydedilemedi: telefonda yer kalmamış olabilir."); } },400); }
+function setSync(cls,txt){ const d=document.getElementById("syncdot"); d.className="dot "+cls; document.getElementById("synctxt").textContent=txt; }
+async function loadAll(){
+  idb=await idbOpen();
+  const d=await tx("kv","readonly",s=>s.get("data"));
+  if(d) for(const k of ["logs","body","daily","settings"]) if(d[k]) state[k]=d[k];
+  const ids=[]; for(const w in state.body) for(const k in (state.body[w].photos||{})) ids.push(state.body[w].photos[k].pid);
+  for(const id of ids){ if(!id) continue; const b=await tx("photos","readonly",s=>s.get(id)); if(b) state.photoUrls[id]=URL.createObjectURL(b); }
+  try{ if(navigator.storage&&navigator.storage.persist) await navigator.storage.persist(); }catch(e){}
+}
+const photoSrc = p => state.photoUrls[p.pid] || "";
+async function addPhoto(k,file){
+  const w=ui.bodyWeek; toast("Fotoğraf kaydediliyor…");
+  try{
+    const {blob}=await shrink(file,1600,.85); const pid="p"+Date.now()+Math.random().toString(36).slice(2,7);
+    await tx("photos","readwrite",s=>s.put(blob,pid)); state.photoUrls[pid]=URL.createObjectURL(blob);
+    const b=(state.body[w] ||= {}); const old=(b.photos ||= {})[k]; b.photos[k]={pid,t:Date.now()};
+    if(old&&old.pid) tx("photos","readwrite",s=>s.delete(old.pid)).catch(()=>{});
+    save(); render(); toast("Fotoğraf kaydedildi");
+  }catch(e){ toast("Fotoğraf kaydedilemedi."); }
+}
+function blobToData(b){ return new Promise(r=>{ const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(b); }); }
+async function exportBackup(){
+  toast("Yedek hazırlanıyor…");
+  const photos={}; for(const id in state.photoUrls){ const b=await tx("photos","readonly",s=>s.get(id)); if(b) photos[id]=await blobToData(b); }
+  const blob=new Blob([JSON.stringify({app:"form-defteri",v:1,at:new Date().toISOString(),data:dataObj(),photos})],{type:"application/json"});
+  const name="form-defteri-yedek-"+TODAY+".json", file=new File([blob],name,{type:"application/json"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],title:"Form Defteri yedeği"}); return; }catch(e){ if(e.name==="AbortError") return; } }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove();
+}
+async function importBackup(file){
+  try{
+    const o=JSON.parse(await file.text()); if(o.app!=="form-defteri") throw 0;
+    for(const id in o.photos){ const b=await (await fetch(o.photos[id])).blob(); await tx("photos","readwrite",s=>s.put(b,id)); state.photoUrls[id]=URL.createObjectURL(b); }
+    for(const k of ["logs","body","daily","settings"]) state[k]=o.data[k]||{};
+    save(); render(); toast("Yedek geri yüklendi");
+  }catch(e){ toast("Bu dosya bir Form Defteri yedeği değil."); }
+}
+
+/* ===================== UYGULAMA DURUMU ===================== */
+const ui = { tab:"home", week:monday(TODAY), dayIdx:(parse(TODAY).getDay()+6)%7, foodDate:TODAY, bodyWeek:monday(TODAY), exSel:"chest-press", metSel:"kilo" };
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+const weekDoc = w => (state.logs[w] ||= {entries:{},done:{}});
+const entry = (w,day,id) => (weekDoc(w).entries[day+"_"+id] ||= {sets:[]});
+const getEntry = (w,day,id) => state.logs[w]?.entries?.[day+"_"+id];
+
+/* ===================== ANTRENMAN ===================== */
+function setsLine(e,unit){ if(!e||!e.sets) return ""; const s=e.sets.filter(x=>x&&(x.kg||x.r)); if(!s.length) return "";
+  return s.map(x=>(x.kg?x.kg+" kg":"")+(x.kg&&x.r?" × ":"")+(x.r?x.r+(unit?" "+unit:""):"")).join(" · "); }
+function prevEntry(w,dk,id){ for(let i=1;i<=8;i++){ const e=getEntry(addDays(w,-7*i),dk,id); if(e&&e.sets&&e.sets.some(s=>s&&(s.kg||s.r))) return {e,ago:i}; } return null; }
+// Hafta başlığı: uygulama her zaman içinde bulunulan haftayı açar; geçmiş hafta yalnızca listeden seçilince görünür.
+function weekHead(w,act){
+  const cur=monday(TODAY), pw=progWeek(w), past=w!==cur;
+  return `<div class="weekhead ${past?"past":""}"><div><span class="label">${past?"Geçmiş hafta":"Bu hafta"}</span><b>${pw>0?pw+". hafta":"Program öncesi"}</b></div>
+   <span class="wk-range num">${weekRange(w)}</span></div>
+   ${past?`<div class="pastbar"><span>Geçmiş haftayı görüntülüyorsun. Değişiklikler o haftaya kaydedilir.</span><button class="btn dark" data-act="${act}" data-w="${cur}">Bu haftaya dön</button></div>`:""}`;
+}
+function historyList(act,weeks,sel){
+  const cur=monday(TODAY); weeks=weeks.filter(k=>k<cur).sort().reverse();
+  if(!weeks.length) return "";
+  return `<details class="card hist"><summary>Geçmiş haftalar <span class="muted small">(${weeks.length})</span></summary><div class="hist-list">
+   ${weeks.map(k=>`<button class="hist-item ${k===sel?"on":""}" data-act="${act}" data-w="${k}"><b>${progWeek(k)>0?progWeek(k)+". hafta":"Program öncesi"}</b><span class="num">${weekRange(k)}</span><span aria-hidden="true">›</span></button>`).join("")}</div></details>`;
+}
+// Gün/hafta değişince (uygulama açık kalsa bile) bugüne kendiliğinden geç
+function refreshDay(){
+  const t=iso(new Date()); if(t===TODAY) return;
+  const oldWeek=monday(TODAY), oldDay=TODAY; TODAY=t;
+  if(ui.week===oldWeek) ui.week=monday(t);
+  if(ui.bodyWeek===oldWeek) ui.bodyWeek=monday(t);
+  if(ui.foodDate===oldDay) ui.foodDate=t;
+  if(ui.week===monday(t)) ui.dayIdx=(parse(t).getDay()+6)%7;
+  render();
+}
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refreshDay(); });
+setInterval(refreshDay,60000);
+function renderTrain(){
+  const w=ui.week, pw=progWeek(w), day=DAYS[ui.dayIdx], dk="d"+day.k, doc=state.logs[w]||{entries:{},done:{}};
+  let h=`<div class="stack">
+  ${weekHead(w,"wk")}
+  <div class="strip">${DAYS.map((d,i)=>{ const date=addDays(w,i);
+    return `<button class="day ${i===ui.dayIdx?"sel":""} ${date===TODAY?"today":""} ${doc.done?.["d"+d.k]?"done":""}" data-act="day" data-i="${i}"><b>${d.s}</b><span>${d.type}</span></button>`;}).join("")}</div>
+  <div class="row between"><div><h2>${day.n} · ${day.type}</h2><div class="muted small">${esc(day.focus)}</div></div></div>`;
+  if(day.ex.length||day.wod) h+=sessionCard(w,dk);
+  if(day.rest){ h+=`<div class="card">${day.rest}</div>`; }
+  if(day.warm) h+=`<div class="card small"><span class="label">Isınma</span><div>${esc(day.warm)}</div><div class="muted">Set sayısına dahil değil.</div></div>`;
+  if(day.pull){ const p=pullPlan(Math.max(pw,1),day.pull);
+    h+=`<div class="section-title"><h3>Barfiks progresyonu</h3><span class="pill">${p.ph}</span></div>
+    <div class="muted small">Ana antrenmandan önce. ${day.pull==="cum"?"Cuma değerleri salıdan bir adım zor.":""}</div>`;
+    p.items.forEach((x,i)=>{ h+=exCard(w,dk,{id:x.id,n:x.n,rep:x.rep,kind:"bw",unit:x.unit,sets:x.n.includes("Bantsız")?3:3},i+1); });
+  }
+  if(day.ex.length){ h+=`<div class="section-title"><h3>Ana antrenman</h3><span class="muted small">${day.ex.length} hareket · ${day.ex.length*3} set</span></div>`;
+    day.ex.forEach((x,i)=>{ h+=exCard(w,dk,x,i+1); }); }
+  if(day.note) h+=`<div class="warnbox">${esc(day.note)}</div>`;
+  if(day.wod){ const wn = pw%2===0?2:1, W=WOD[wn], e=getEntry(w,dk,"wod")||{};
+    h+=`<div class="card small"><b>Karar kuralı.</b> Sabah bacaklar ağrılıysa ya da uyku kötüyse WOD yerine 45–60 dk eğimli yürüyüş yap (5 km/s, 5–8 eğim). İkisi de geçerli bir gün. Koşu yerine her zaman kürek.</div>
+    <div class="card small"><span class="label">Isınma · 10 dk</span><div>500 m hafif kürek, ardından 2 tur kol ve kalça çevirme ile air squat.</div></div>
+    <div class="ex"><div class="row between"><h3>${W.t}</h3></div><div class="hint">${W.sub}</div>
+    <ul class="items">${W.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+    <div class="mgrid"><label>Sonuç (${W.unit})<input class="in" id="wod-res" data-act="wod" data-f="res" value="${esc(e.res||"")}" placeholder="${wn===1?"4":"19:30"}" inputmode="${wn===1?"numeric":"text"}"></label>
+    <label>Yerine yürüyüş<select class="in" id="wod-alt" data-act="wod" data-f="alt"><option value="">Hayır</option><option value="1" ${e.alt?"selected":""}>Evet, eğimli yürüyüş</option></select></label></div>
+    ${(()=>{const p=prevEntry(w,dk,"wod"); return p&&p.e.res?`<div class="hint">Önceki: ${esc(p.e.res)} ${W.unit==="tur"?"":""}(${p.ago} hafta önce)</div>`:"";})()}</div>`;
+  }
+  if(day.ex.length||day.wod){
+    h+=`<label class="check"><input type="checkbox" id="done-${dk}" data-act="done" data-k="${dk}" ${doc.done?.[dk]?"checked":""}> Bu antrenmanı tamamladım</label>`;
+  }
+  h+=historyList("wk",Object.keys(state.logs).filter(k=>Object.keys(state.logs[k].entries||{}).length||Object.values(state.logs[k].done||{}).some(Boolean)),w);
+  h+=`<details class="card"><summary>Temel kurallar</summary><dl class="rules">${RULES.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join("")}</dl></details>
+  <div class="card row between"><div><div class="label">Program başlangıcı</div><div class="small muted">Hafta numarası, barfiks aşaması ve WOD sırası buna göre hesaplanır.</div></div>
+  <input type="date" class="in" style="max-width:170px" id="start-date" data-act="start" value="${esc(state.settings.start||monday(TODAY))}"></div>
+  <div class="card stack" style="gap:8px"><div><div class="label">Yedek</div><div class="small muted">Kayıtların ve fotoğrafların yalnızca bu telefonda duruyor. Ayda bir yedek alıp Dosyalar'a ya da Drive'a kaydet; telefon değiştirirsen yedekten geri yüklersin.</div></div>
+  <div class="row"><button class="btn primary" data-act="backup">Yedek al</button><label class="btn" style="position:relative;overflow:hidden">Yedekten yükle<input type="file" accept="application/json,.json" id="restore" data-act="restore" style="position:absolute;inset:0;opacity:0"></label></div></div></div>`;
+  return h;
+}
+function sessionCard(w,dk){
+  const a=active(), ss=state.logs[w]?.sess?.[dk];
+  if(a&&a.w===w&&a.dk===dk) return `<div class="session on"><div><div class="label">Antrenman sürüyor</div><div class="small">Sayaç üst barda. Bitince "Antrenmanı bitir"e dokun.</div></div></div>`;
+  if(w!==monday(TODAY)&&!ss) return "";
+  let h=`<div class="session">`;
+  if(ss) h+=`<div class="sess-res"><div><span class="label">Süre</span><b class="num">${mins(ss.sec)} dk</b></div><div><span class="label">Dinlenme</span><b class="num">${mins(ss.rest)} dk</b></div><div><span class="label">Başlangıç</span><b class="num">${new Date(ss.start).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</b></div></div>`;
+  if(w!==monday(TODAY)) return h+`</div>`;
+  h+= a ? `<div class="small muted">Şu an başka bir gün için sayaç çalışıyor.</div>`
+        : `<button class="btn primary big-btn" data-act="startsess" data-w="${w}" data-k="${dk}">▶ ${ss?"Yeniden başlat":"Antrenmana başla"}</button>`;
+  return h+`</div>`;
+}
+function exCard(w,dk,x,no){
+  const e=getEntry(w,dk,x.id)||{sets:[]}, prev=prevEntry(w,dk,x.id), bw=x.kind==="bw";
+  let up=false;
+  if(!bw && prev){ const s=prev.e.sets.filter(s=>s&&s.r); up = s.length>=x.sets && s.every(s=>Number(s.r)>=x.hi); }
+  let rows="";
+  for(let i=0;i<x.sets;i++){ const s=e.sets[i]||{}, ps=prev?.e.sets[i]||{};
+    rows+=`<span class="sn">Set ${i+1}</span>`+
+    (bw?`<input class="in" style="grid-column:span 2" inputmode="numeric" id="${w}-${dk}-${x.id}-r${i}" data-act="set" data-w="${w}" data-k="${dk}" data-id="${x.id}" data-i="${i}" data-f="r" value="${esc(s.r||"")}" placeholder="${esc(ps.r||x.unit)}">`
+       :`<input class="in" inputmode="decimal" id="${w}-${dk}-${x.id}-k${i}" data-act="set" data-w="${w}" data-k="${dk}" data-id="${x.id}" data-i="${i}" data-f="kg" value="${esc(s.kg||"")}" placeholder="${esc(ps.kg||"kg")}">
+         <input class="in" inputmode="numeric" id="${w}-${dk}-${x.id}-r${i}" data-act="set" data-w="${w}" data-k="${dk}" data-id="${x.id}" data-i="${i}" data-f="r" value="${esc(s.r||"")}" placeholder="${esc(ps.r||"tekrar")}">`);
+  }
+  return `<div class="ex"><div class="ex-head"><span class="ex-no">${no}</span><div class="t"><h3>${esc(x.n)}</h3>${x.tip?`<div class="hint">${esc(x.tip)}</div>`:""}</div>
+   <div class="target">${bw?esc(x.rep):`3 × ${x.rep}`}</div></div>
+   ${prev?`<div class="row"><span class="hint">${prev.ago===1?"Geçen hafta":prev.ago+" hafta önce"}: <b class="num">${esc(setsLine(prev.e,bw?x.unit:""))}</b></span>${up?`<span class="pill up">▲ Ağırlığı artır</span>`:""}</div>`:""}
+   <div class="sets">${bw?`<span></span><span class="h" style="grid-column:span 2">${x.unit}</span>`:`<span></span><span class="h">Ağırlık (kg)</span><span class="h">Tekrar</span>`}${rows}</div>
+   <div class="row between">${prev&&!bw?`<button class="btn ghost small" data-act="copy" data-w="${w}" data-k="${dk}" data-id="${x.id}">Geçen haftanın ağırlıklarını yaz</button>`:"<span></span>"}
+   <a class="vid" href="${yt(x.n)}" target="_blank" rel="noopener">▶ Videoyu izle</a></div>
+   <div class="restrow"><span class="label">Dinlen</span>${[45,90,180].map(t=>`<button class="rbtn" data-act="rest" data-s="${t}" data-n="${esc(x.n)}">${t<120?t+" sn":t/60+" dk"}</button>`).join("")}</div>
+   <input class="in small" id="${w}-${dk}-${x.id}-note" data-act="note" data-w="${w}" data-k="${dk}" data-id="${x.id}" value="${esc(e.note||"")}" placeholder="Not (makine ayarı, bant rengi, his…)" style="font-size:14px"></div>`;
+}
+
+/* ===================== BESLENME ===================== */
+function dayDoc(d){ return (state.daily[d] ||= {meals:{},water:0}); }
+function renderFood(){
+  const d=ui.foodDate, doc=state.daily[d]||{meals:{},water:0}, y=state.daily[addDays(d,-1)];
+  const now=new Date(), mins=now.getHours()*60+now.getMinutes();
+  let cur=null; if(d===TODAY){ MEALS.forEach(m=>{ if(mins>=m.h[0]*60+m.h[1]-30) cur=m.id; }); }
+  const eaten=MEALS.filter(m=>doc.meals?.[m.id]?.eaten).length;
+  let h=`<div class="stack"><div class="weeknav"><button class="btn icon" data-act="fd" data-d="-1" aria-label="Önceki gün">‹</button>
+   <div class="mid"><b>${d===TODAY?"Bugün":fmt(d)}</b><span class="small muted">${DAYS[(parse(d).getDay()+6)%7].n} · ${eaten}/${MEALS.length} öğün</span></div>
+   <button class="btn icon" data-act="fd" data-d="1" aria-label="Sonraki gün">›</button></div>
+   <div class="card stack" style="gap:8px"><div class="row between"><span class="label">Su</span><b class="num">${((doc.water||0)*0.25).toFixed(2).replace(".",",")} / 3,5 L</b></div>
+   <div class="water">${Array.from({length:WATER_GOAL},(_,i)=>`<button class="glass ${i<(doc.water||0)?"on":""}" data-act="water" data-i="${i}" aria-label="${(i+1)*250} ml"></button>`).join("")}</div>
+   <div class="hint">Her bardak 250 ml. Hedef 3–3,5 litre.</div></div>`;
+  MEALS.forEach(m=>{ const md=doc.meals?.[m.id]||{}, sel=md.opt??0, o=m.opts[sel]||m.opts[0];
+    const rep = m.noRepeat && y?.meals?.[m.id]?.eaten && y.meals[m.id].opt===sel;
+    h+=`<div class="meal ${cur===m.id?"now":""} ${md.eaten?"eaten":""}"><div class="row between"><div><div class="meal-time num">${m.t}</div><h3>${m.n}</h3></div>
+     <label class="eat"><input type="checkbox" id="eat-${m.id}" data-act="eat" data-m="${m.id}" ${md.eaten?"checked":""}> Yedim</label></div>
+     ${m.opts.length>1?`<div class="chips">${m.opts.map((op,i)=>`<button class="chip ${i===sel?"on":""}" data-act="opt" data-m="${m.id}" data-i="${i}">${esc(op.n)}</button>`).join("")}</div>`:""}
+     <ul class="items">${o.it.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+     ${m.note?`<div class="hint">${esc(m.note)}</div>`:""}
+     ${m.noRepeat?(rep?`<div class="warnbox">Dün de bu menüyü yedin. Üst üste aynı menü olmasın.</div>`:`<div class="hint">Üst üste aynı menüyü seçme.</div>`):""}</div>`; });
+  h+=`<div class="card"><span class="label">Notlar</span><ul class="items small" style="margin-top:6px">${FOOD_NOTES.map(n=>`<li>${n}</li>`).join("")}</ul></div></div>`;
+  return h;
+}
+
+/* ---- sporcu erkek çizimi (ön görünüm; kişinin sağı ekranın solunda) ---- */
+// Noktalardan yumuşak (Catmull-Rom) kapalı eğri üretir.
+function smooth(pts){
+  const n=pts.length, P=i=>pts[(i+n)%n]; let d=`M${P(0)[0]} ${P(0)[1]}`;
+  for(let i=0;i<n;i++){ const p0=P(i-1),p1=P(i),p2=P(i+1),p3=P(i+2);
+    const c1=[p1[0]+(p2[0]-p0[0])/6, p1[1]+(p2[1]-p0[1])/6], c2=[p2[0]-(p3[0]-p1[0])/6, p2[1]-(p3[1]-p1[1])/6];
+    d+=` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0]} ${p2[1]}`; }
+  return d+"Z";
+}
+const mirrorX = pts => pts.map(([x,y])=>[200-x,y]);
+const sym = half => half.concat(mirrorX(half.slice(1,-1)).reverse());
+// Sağ yarı dış hat: baş üstünden aşağı, kol, gövde, bacak, ayak; sonra kasık.
+const FRONT_HALF = [[100,6],[111,9],[117,20],[117,34],[114,47],[108,57],[108,66],[112,74],[130,79],[148,85],[160,92],[167,104],[169,120],[171,137],[173,153],[171,168],[169,177],[173,192],[175,208],[172,226],[168,238],[171,250],[169,262],[163,266],[158,258],[158,245],[156,236],[155,218],[152,199],[151,184],[149,166],[147,147],[139,128],[136,142],[134,160],[127,180],[124,198],[129,214],[134,230],[137,254],[136,280],[131,304],[127,320],[127,334],[131,352],[128,374],[122,392],[122,401],[130,410],[126,416],[110,416],[107,407],[108,395],[105,373],[105,350],[103,330],[104,302],[103,274],[100,256]];
+const FRONT_PATH = smooth(sym(FRONT_HALF));
+const DETAIL_HALF = [
+ "M106 78 Q119 81 133 84",            // köprücük
+ "M139 90 Q147 104 144 124",          // omuz ayrımı
+ "M101 98 Q118 94 136 104",           // göğüs üst
+ "M101 130 Q119 136 135 120",         // göğüs alt
+ "M104 150 Q110 149 113 152",         // karın
+ "M104 166 Q110 165 113 168",
+ "M104 182 Q109 181 112 184",
+ "M126 196 Q114 214 104 236",         // V çizgisi
+ "M124 248 Q120 278 113 302",         // ön bacak
+ "M134 262 Q130 286 126 304",
+ "M110 314 Q117 322 124 314",         // diz
+ "M123 342 Q127 356 125 370",         // kalf
+ "M155 140 Q158 152 157 164",         // biceps
+ "M157 196 Q161 210 159 222"          // ön kol
+];
+const mirrorPath = d => d.replace(/([MQL ])(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,(m,c,x,y)=>`${c}${200-parseFloat(x)} ${y}`);
+const FRONT_DETAILS = DETAIL_HALF.concat(DETAIL_HALF.map(mirrorPath)).concat(["M100 136 L100 196","M100 62 L100 74"]);
+const BACK_DETAILS = ["M100 70 L100 230","M118 96 Q126 116 120 136","M82 96 Q74 116 80 136","M108 84 Q126 92 146 92","M92 84 Q74 92 54 92",
+ "M104 230 Q118 236 132 226","M96 230 Q82 236 68 226","M100 236 L100 256","M120 322 Q126 344 124 366","M80 322 Q74 344 76 366"];
+// Yandan görünüm (sağa bakar): gövde + öne düşen kol
+const SIDE_BODY = smooth([[92,6],[105,6],[114,13],[118,25],[121,35],[117,41],[116,51],[110,58],[112,68],[124,82],[135,99],[135,117],[127,133],[124,151],[127,171],[124,190],[127,206],[131,224],[132,250],[127,290],[119,314],[119,330],[114,360],[112,390],[113,399],[133,408],[131,416],[94,416],[92,404],[95,393],[90,370],[87,346],[91,326],[89,311],[84,289],[80,262],[72,238],[70,214],[80,198],[84,180],[81,160],[78,136],[76,110],[81,86],[89,70],[91,60],[86,47],[84,29]]);
+const SIDE_ARM = smooth([[96,86],[111,85],[117,104],[116,132],[112,158],[116,190],[114,222],[108,236],[98,234],[94,222],[96,190],[92,160],[91,130],[91,104]]);
+const silFront = (details=FRONT_DETAILS) => `<path class="sil" d="${FRONT_PATH}"/><g class="det">${details.map(d=>`<path d="${d}"/>`).join("")}</g>`;
+const silSide = flip => `<g ${flip?'transform="translate(200 0) scale(-1 1)"':""}><path class="sil" d="${SIDE_BODY}"/><path class="sil" d="${SIDE_ARM}"/><g class="det"><path d="M101 98 Q112 104 120 116"/><path d="M118 238 Q114 270 116 300"/></g></g>`;
+const ghost = k => `<svg class="ghost" viewBox="0 0 200 420" aria-hidden="true">${k==="sag"?silSide(false):k==="sol"?silSide(true):k==="arka"?silFront(BACK_DETAILS):silFront()}</svg>`;
+// [anahtar, ad, birim, işaret x, y, çizgi x1, x2]
+const BODY_POINTS = [
+  ["omuz","Omuz","cm",100,97,26,174],
+  ["gogus","Göğüs","cm",100,117,58,142],
+  ["bel","Bel","cm",100,188,70,130],
+  ["kolSag","Sağ kol","cm",38,152,24,52],
+  ["kolSol","Sol kol","cm",162,152,148,176],
+  ["bacakSag","Sağ bacak","cm",80,268,62,98],
+  ["bacakSol","Sol bacak","cm",120,268,102,138],
+  ["kalfSag","Sağ kalf","cm",83,352,68,96],
+  ["kalfSol","Sol kalf","cm",117,352,104,132]
+];
+const METRICS = [["kilo","Kilo","kg"]].concat(BODY_POINTS.map(p=>[p[0],p[1],p[2]]));
+const LOWER_IS_BETTER = {kilo:1,bel:1};
+function bodyFigure(b){
+  const lines = BODY_POINTS.map(p=>`<line class="mline" x1="${p[5]}" x2="${p[6]}" y1="${p[4]}" y2="${p[4]}"/>`).join("");
+  const marks = BODY_POINTS.map((p,i)=>`<g class="mk ${num(b[p[0]])!=null?"on":""}" data-act="mfocus" data-k="${p[0]}" role="button" aria-label="${p[1]}"><circle cx="${p[3]}" cy="${p[4]}" r="10"/><text x="${p[3]}" y="${p[4]+4}" text-anchor="middle">${i+1}</text></g>`).join("");
+  return `<div class="figure"><svg viewBox="0 0 200 420" role="img" aria-label="Ölçüm noktaları gösterilen sporcu erkek çizimi">${silFront()}${lines}${marks}</svg></div>`;
+}
+
+/* ===================== ÖLÇÜ & FOTO ===================== */
+function renderBody(){
+  const w=ui.bodyWeek, b=state.body[w]||{}, pw=progWeek(w), ph=b.photos||{};
+  const weeks=Object.keys(state.body).filter(k=>state.body[k].photos&&Object.keys(state.body[k].photos).length).sort().reverse();
+  const kp=prevBody(w,"kilo");
+  let h=`<div class="stack">${weekHead(w,"bw")}
+   <div class="card stack"><div class="row between"><h3>Beden ölçüleri</h3><span class="hint">Pazartesi sabah, aç karna</span></div>
+   <div class="kilo-row"><div><div style="font-weight:600">Kilo</div>${deltaTxt(b.kilo,kp,"kg","kilo")}</div>
+    <span class="unit"><input class="in" inputmode="decimal" id="m-${w}-kilo" data-act="met" data-k="kilo" value="${esc(b.kilo||"")}" placeholder="${esc(kp??"")}"><em>kg</em></span></div>
+   <div class="bodywrap">${bodyFigure(b)}
+    <div class="mlist">${BODY_POINTS.map(([k,n,u],i)=>{ const pv=prevBody(w,k);
+      return `<label class="mrow ${num(b[k])!=null?"on":""}" for="m-${w}-${k}"><span class="no">${i+1}</span><span class="nm">${n}${deltaTxt(b[k],pv,u,k)}</span>
+       <span class="unit"><input class="in" inputmode="decimal" id="m-${w}-${k}" data-act="met" data-k="${k}" value="${esc(b[k]||"")}" placeholder="${esc(pv??"")}"><em>${u}</em></span></label>`;}).join("")}</div></div>
+   <div class="hint">Gri sayılar bir önceki ölçümün. Kol ve bacakta her hafta aynı noktadan ölç.</div></div>
+   <div class="card stack"><div class="row between"><h3>Değişim fotoğrafları</h3><span class="hint">Aynı ışık ve pozisyon</span></div>
+   <div class="photos">${PHOTO_SLOTS.map(([k,n])=> ph[k]
+     ? `<div class="slot"><img src="${esc(photoSrc(ph[k]))}" alt="${n} fotoğraf" data-act="zoom"><span class="cap">${n}</span><button class="del" data-act="pdel" data-k="${k}" aria-label="${n} fotoğrafını sil">✕</button></div>`
+     : `<label class="slot">${ghost(k)}<span><b>+ ${n}</b></span><input type="file" accept="image/*" id="ph-${k}" data-act="photo" data-k="${k}"></label>`).join("")}</div>
+   ${state.pendingDel?`<div class="warnbox row between"><span>${PHOTO_SLOTS.find(s=>s[0]===state.pendingDel)[1]} fotoğrafı silinsin mi?</span><span class="row"><button class="btn" data-act="pdelno">Vazgeç</button><button class="btn primary" data-act="pdelyes">Sil</button></span></div>`:""}
+   </div>
+   ${historyList("bw",Object.keys(state.body).filter(k=>METRICS.some(([m])=>num(state.body[k][m])!=null)),w)}
+   <div class="section-title"><h3>Fotoğraf arşivi</h3><span class="muted small">${weeks.length} hafta</span></div>`;
+  if(!weeks.length) h+=`<div class="card empty">Yüklediğin fotoğraflar burada hafta hafta birikir; yan yana karşılaştırabilirsin.</div>`;
+  weeks.forEach(k=>{ const p=state.body[k].photos;
+    h+=`<div class="gal-week"><div class="row between"><b>${progWeek(k)>0?progWeek(k)+". hafta":"Program öncesi"}</b><span class="small muted num">${weekRange(k)}${state.body[k].kilo?" · "+esc(state.body[k].kilo)+" kg":""}</span></div>
+    <div class="thumbs">${PHOTO_SLOTS.map(([s,n])=>p[s]?`<img src="${esc(photoSrc(p[s]))}" alt="${n}, ${weekRange(k)}" data-act="zoom">`:`<div class="slot" style="cursor:default"><span class="small">${n} yok</span></div>`).join("")}</div></div>`; });
+  return h+"</div>";
+}
+
+/* ===================== ÖZET ===================== */
+// Machiavelli, Hükümdar (Il Principe). Serbest Türkçe çeviri; her gün sırayla bir söz.
+const QUOTES = [
+ ["Akıllı insan her zaman büyük insanların açtığı yoldan gitmeli, en üstün olanları örnek almalıdır; onların erdemine ulaşamasa bile hiç değilse bir kokusunu taşır.",6],
+ ["Akıllı okçular, vurmak istedikleri yer çok uzaksa nişanı hedeften daha yükseğe alırlar.",6],
+ ["Fırsat olmasaydı ruhlarındaki erdem sönüp gidecekti; erdem olmasaydı fırsat boşuna gelip geçecekti.",6],
+ ["Kendi erdemiyle yükselenler yükselirken zorluk çeker, ama yerlerini kolayca korurlar.",6],
+ ["Yeni bir düzen kurmaya öncülük etmekten daha zor, başarısı daha şüpheli ve yürütmesi daha tehlikeli bir iş yoktur.",6],
+ ["Uzaktan görülen dertlere kolayca çare bulunur; yaklaşmalarını beklersen ilaç vaktinde yetişmez, çünkü hastalık artık iyileşmez olur.",3],
+ ["Zaman her şeyi önüne katıp getirir; iyiyi de kötüyü de.",3],
+ ["Hızla doğup büyüyen her şey gibi, kökleri ve dalları olmayan şey de ilk fırtınada devrilir.",7],
+ ["Kendi silahlarına dayanmayan hiçbir güç güvende değildir.",13],
+ ["Barış zamanında bile savaşı düşünmekten vazgeçmemeli; barışta savaştan da çok çalışmalıdır.",14],
+ ["Bedenini zorluklara alıştırmalı, bir yandan da yeri tanımayı öğrenmelidir.",14],
+ ["Bilge biri sakin zamanlarda boş durmaz; talih döndüğünde kendini hazır bulmak için o zamanlarda güç biriktirir.",14],
+ ["Silahsız olmanın getirdiği kötülüklerden biri de hor görülmektir.",14],
+ ["Zihnini eğitmek için tarihi okumalı, büyük insanların nasıl davrandığını incelemelidir.",14],
+ ["Yapılması gerekeni uğruna yapılanı bırakan, kendini korumaktan çok yıkımını öğrenir.",15],
+ ["Tuzakları tanımak için tilki, kurtları korkutmak için aslan olmak gerekir.",18],
+ ["Aslan kendini tuzaklardan, tilki de kurtlardan koruyamaz.",18],
+ ["Herkes senin nasıl göründüğünü görür; ne olduğunu ise pek azı bilir.",18],
+ ["İnsanlar genellikle ellerinden çok gözleriyle yargılar; çünkü görmek herkese, dokunmak ise az kişiye nasip olur.",18],
+ ["Birinin aklı hakkındaki ilk fikir, çevresindeki insanlara bakılarak edinilir.",22],
+ ["Yalnızca sana ve kendi erdemine dayanan savunmalar iyidir, sağlamdır ve kalıcıdır.",24],
+ ["Talih işlerimizin yarısının hakemidir; ama öbür yarısını, ya da yarısına yakınını, bize bırakır.",25],
+ ["Talih, ona karşı koyacak bir gücün hazırlanmadığı yerde gücünü gösterir.",25],
+ ["Taşkın bir nehre karşı sakin zamanlarda set ve bent kuran, sular yükseldiğinde zarar görmez.",25],
+ ["Zamanın gidişine uyan kişi başarılı olur; tarzı zamanla uyuşmayan ise başarısız.",25],
+ ["Temkinli olmaktansa atılgan olmak daha iyidir.",25],
+ ["Tanrı her şeyi kendisi yapmak istemez; özgür irademizi ve bize düşen şan payını elimizden almamak için.",26],
+ ["Sevilmek mi korkulmak mı daha iyidir? İkisi birden olmak istenir; ama birinden vazgeçmek gerekirse korkulmak çok daha güvenlidir.",17]
+];
+function dailyQuote(){ const d=parse(TODAY); const doy=Math.floor((d-new Date(d.getFullYear(),0,1))/864e5); return QUOTES[doy%QUOTES.length]; }
+const AY_UZUN=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+function renderHome(){
+  const now=new Date(), hr=now.getHours(), cw=monday(TODAY), pw=progWeek(cw), ti=(parse(TODAY).getDay()+6)%7, td=DAYS[ti];
+  const greet = hr<5?"İyi geceler":hr<12?"Günaydın":hr<18?"İyi günler":"İyi akşamlar";
+  const [qt,ch]=dailyQuote();
+  // kilo
+  const kw=Object.keys(state.body).filter(w=>num(state.body[w].kilo)!=null).sort();
+  const kNow= kw.length? num(state.body[kw[kw.length-1]].kilo):null;
+  const kPrev= kw.length>1? num(state.body[kw[kw.length-2]].kilo):null;
+  const kFirst= kw.length>1? num(state.body[kw[0]].kilo):null;
+  // antrenman
+  const done=state.logs[cw]?.done||{}, lifts=[1,2,4,5], liftDone=lifts.filter(k=>done["d"+k]).length;
+  // beslenme
+  let eaten=0, possible=0, water=0, days=0; const dayBars=[];
+  for(let i=0;i<7;i++){ const d=addDays(cw,i), doc=state.daily[d], n=MEALS.filter(m=>doc?.meals?.[m.id]?.eaten).length;
+    if(d<=TODAY){ eaten+=n; possible+=MEALS.length; water+=(doc?.water||0)*0.25; days++; }
+    dayBars.push({d,n,future:d>TODAY}); }
+  const pct= possible? Math.round(eaten/possible*100):0;
+  let h=`<div class="stack">
+   <div class="hello"><span class="date">${parse(TODAY).getDate()} ${AY_UZUN[parse(TODAY).getMonth()]} ${td.n}${pw>0?` · Program ${pw}. hafta`:""}</span><h2>${greet}</h2></div>
+   <figure class="quote" style="margin:0"><span class="mark" aria-hidden="true">“</span><blockquote class="q" style="margin:0">${esc(qt)}</blockquote>
+    <figcaption class="src">Machiavelli, Hükümdar · ${ch}. bölüm</figcaption></figure>
+   <div class="card todaycard"><div style="min-width:0"><div class="label">Bugün</div><h3>${td.type}${td.ex.length?` · ${td.ex.length} hareket`:""}</h3><div class="hint">${esc(td.focus)}</div></div>
+    <button class="go" data-act="gotrain">${active()?"Devam et":td.ex.length||td.wod?(done["d"+td.k]?"Gör":"Antrenmana başla"):"Gör"} →</button></div>
+   <div class="kpi">
+    <div class="card" data-act="gobody" style="cursor:pointer"><div class="label">Güncel kilo</div>
+     ${kNow==null?`<div class="big">–</div><div class="hint">Vücut sekmesinden ilk ölçümü gir.</div>`
+      :`<div class="big">${fmtN(kNow)}<small>kg</small></div>
+       <div class="hint">${kPrev!=null?`Önceki ölçüme göre <b class="num" style="color:var(${kNow<=kPrev?"--good":"--warn"})">${kNow-kPrev>0?"+":""}${fmtN(kNow-kPrev)}</b>`:"İlk ölçüm"}${kFirst!=null&&kw.length>2?` · başlangıçtan ${kNow-kFirst>0?"+":""}${fmtN(kNow-kFirst)}`:""}</div>`}</div>
+    <div class="card"><div class="label">Antrenman</div><div class="big">${liftDone}<small>/ 4</small></div>
+     <div class="bar"><i style="width:${liftDone/4*100}%"></i></div><div class="hint">${(()=>{ const ss=Object.values(state.logs[cw]?.sess||{}); const t=ss.reduce((a,x)=>a+x.sec,0); return ss.length?`Toplam ${mins(t)} dk antrenman`:(done.d6?"CrossFit de yapıldı":"Ağırlık günleri"); })()}</div></div>
+   </div>
+   <div class="card stack" style="gap:10px"><div class="row between"><h3>Bu haftanın antrenmanı</h3><span class="hint num">${weekRange(cw)}</span></div>
+    <div class="wkdots">${DAYS.map((d,i)=>{ const date=addDays(cw,i), isRest=!d.ex.length&&!d.wod;
+      return `<div><i class="${done["d"+d.k]?"done":""} ${isRest?"rest":""} ${date===TODAY?"today":""}">${done["d"+d.k]?"✓":isRest?"":d.type[0]}</i>${d.s}</div>`;}).join("")}</div></div>
+   <div class="card stack" style="gap:10px" data-act="gofood"><div class="row between"><h3>Bu haftanın beslenmesi</h3><b class="num">%${pct}</b></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="row between hint"><span>${eaten} / ${possible} öğün işaretlendi</span><span class="num">Su ort. ${days?fmtN(water/days):"0"} L / gün</span></div>
+    <div class="wkdots">${dayBars.map((x,i)=>`<div><i class="${x.n===MEALS.length?"done":""} ${x.d===TODAY?"today":""}" style="${x.future?"opacity:.4":""}">${x.future?"":x.n}</i>${DAYS[i].s}</div>`).join("")}</div></div>
+  </div>`;
+  return h;
+}
+
+function prevBody(w,k){ const ks=Object.keys(state.body).filter(x=>x<w&&state.body[x][k]).sort(); return ks.length?state.body[ks[ks.length-1]][k]:null; }
+function deltaTxt(v,p,u,k){ const a=num(v), b=num(p); if(a==null||b==null) return ""; const d=a-b; if(!d) return `<span class="d muted">Değişim yok</span>`;
+  const col = LOWER_IS_BETTER[k] ? (d<0?"--good":"--warn") : "--muted";
+  return `<span class="d num" style="color:var(${col})">${d>0?"+":""}${String(Math.round(d*10)/10).replace(".",",")} ${u}</span>`; }
+const num = v => { if(v==null||v==="") return null; const n=parseFloat(String(v).replace(",",".")); return isNaN(n)?null:n; };
+async function shrink(file,max,q){
+  const url=URL.createObjectURL(file); const img=new Image(); img.src=url; await img.decode();
+  const sc=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement("canvas");
+  c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc); c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+  return new Promise(r=>c.toBlob(b=>r({blob:b,data:c.toDataURL("image/jpeg",q)}),"image/jpeg",q));
+}
+
+/* ===================== GELİŞİM ===================== */
+function lineChart(pts,unit,cls=""){
+  if(pts.length<1) return "";
+  const W=340,H=180,L=36,R=14,T=18,B=26, ys=pts.map(p=>p.y);
+  let lo=Math.min(...ys), hi=Math.max(...ys); if(lo===hi){ lo-=1; hi+=1; } const padv=(hi-lo)*.15; lo-=padv; hi+=padv;
+  const step=niceStep((hi-lo)/4); lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+  const X=i=> pts.length===1 ? (L+W-R)/2 : L+i*(W-L-R)/(pts.length-1), Y=v=>T+(hi-v)*(H-T-B)/(hi-lo);
+  let g=""; for(let v=lo; v<=hi+1e-9; v+=step){ g+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${L-6}" y="${Y(v)+3}" text-anchor="end">${fmtN(v)}</text>`; }
+  const every=Math.ceil(pts.length/6);
+  pts.forEach((p,i)=>{ if(i%every===0||i===pts.length-1) g+=`<text class="axis" x="${X(i)}" y="${H-8}" text-anchor="middle">${esc(p.x)}</text>`; });
+  const d=pts.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(p.y).toFixed(1)).join(" ");
+  const area= pts.length>1? `<path class="ar" d="${d} L${X(pts.length-1)} ${H-B} L${X(0)} ${H-B} Z"/>`:"";
+  const last=pts[pts.length-1];
+  return `<div class="chart ${cls}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafik">${g}${area}<path class="ln" d="${d}"/>
+   ${pts.map((p,i)=>`<circle class="pt ${i===pts.length-1?"last":""}" cx="${X(i)}" cy="${Y(p.y)}" r="3.5"><title>${esc(p.x)}: ${fmtN(p.y)} ${unit}</title></circle>`).join("")}
+   <text class="vl" x="${Math.min(X(pts.length-1),W-R)}" y="${Y(last.y)-9}" text-anchor="${pts.length>1?"end":"middle"}">${fmtN(last.y)} ${unit}</text></svg></div>`;
+}
+const niceStep = s => { const p=Math.pow(10,Math.floor(Math.log10(s))); const n=s/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; };
+const fmtN = v => String(Math.round(v*10)/10).replace(".",",");
+function allExercises(){ const m=new Map(); DAYS.forEach(d=>d.ex.forEach(x=>{ if(!m.has(x.id)) m.set(x.id,{...x,days:[d.s]}); else m.get(x.id).days.push(d.s); })); return [...m.values()]; }
+function exSeries(id){
+  return Object.keys(state.logs).sort().map(w=>{ let best=null, top=null;
+    for(const [k,e] of Object.entries(state.logs[w].entries||{})){ if(k.split("_").slice(1).join("_")!==id) continue;
+      (e.sets||[]).forEach(s=>{ const kg=num(s&&s.kg); if(kg!=null&&(best==null||kg>best)){ best=kg; top=s; } }); }
+    return best==null?null:{w,x:"H"+progWeek(w),y:best,r:top.r}; }).filter(Boolean);
+}
+function renderProgress(){
+  const exs=allExercises(), sel=exs.find(x=>x.id===ui.exSel)||exs[0], ser=exSeries(sel.id);
+  const weeks=Object.keys(state.logs).sort(), cw=monday(TODAY);
+  const doneThis=Object.values(state.logs[cw]?.done||{}).filter(Boolean).length;
+  const totalDone=weeks.reduce((a,w)=>a+Object.values(state.logs[w].done||{}).filter(Boolean).length,0);
+  const bw=Object.keys(state.body).filter(w=>num(state.body[w].kilo)!=null).sort();
+  const kDelta= bw.length>1 ? num(state.body[bw[bw.length-1]].kilo)-num(state.body[bw[0]].kilo) : null;
+  let h=`<div class="stack"><div class="stats">
+   <div class="stat"><span class="label">Bu hafta</span><b>${doneThis}/5</b><span class="small muted">antrenman</span></div>
+   <div class="stat"><span class="label">Toplam</span><b>${totalDone}</b><span class="small muted">antrenman</span></div>
+   <div class="stat"><span class="label">Kilo farkı</span><b>${kDelta==null?"–":(kDelta>0?"+":"")+fmtN(kDelta)}</b><span class="small muted">${kDelta==null?"2 ölçüm gerekli":"kg, ilk ölçümden"}</span></div></div>
+   <div class="card stack"><div class="row between"><h3>Hareket gelişimi</h3><span class="hint">Haftanın en yüksek ağırlığı</span></div>
+   <select class="in" id="ex-sel" data-act="exsel">${exs.map(x=>`<option value="${x.id}" ${x.id===sel.id?"selected":""}>${esc(x.n)} (${x.days.join(", ")})</option>`).join("")}</select>`;
+  if(!ser.length) h+=`<div class="empty">${esc(sel.n)} için henüz kayıt yok. Antrenman sekmesinde ağırlıklarını girdikçe grafik burada oluşur.</div>`;
+  else { h+=lineChart(ser,"kg");
+    const first=ser[0].y, last=ser[ser.length-1].y;
+    h+=`<div class="row between small"><span class="muted">${ser.length} hafta kayıt</span><b class="num" style="color:var(${last>=first?"--good":"--warn"})">${last-first>=0?"+":""}${fmtN(last-first)} kg</b></div>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Hafta</th><th>Tarih</th><th>En yüksek</th><th>Tekrar</th></tr></thead><tbody>
+    ${ser.slice().reverse().map(p=>`<tr><td>${p.x}</td><td>${fmt(p.w)}</td><td>${fmtN(p.y)} kg</td><td>${esc(p.r||"–")}</td></tr>`).join("")}</tbody></table></div>`; }
+  h+=`</div><div class="card stack"><div class="row between"><h3>Beden ölçüleri</h3></div>
+   <div class="chips">${METRICS.map(([k,n])=>`<button class="chip ${k===ui.metSel?"on":""}" data-act="metsel" data-k="${k}">${n}</button>`).join("")}</div>`;
+  const [mk,mn,mu]=METRICS.find(m=>m[0]===ui.metSel);
+  const ms=Object.keys(state.body).sort().filter(w=>num(state.body[w][mk])!=null).map(w=>({w,x:"H"+progWeek(w),y:num(state.body[w][mk])}));
+  h+= ms.length? lineChart(ms,mu,"food") : `<div class="empty">${mn} ölçüsü girdiğinde değişim grafiği burada görünür.</div>`;
+  return h+"</div></div>";
+}
+
+/* ===================== ANTRENMAN SAYACI & DİNLENME ===================== */
+const hms = s => { s=Math.max(0,Math.round(s)); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return (h?h+":"+pad(m):m)+":"+pad(x); };
+const mins = s => Math.max(1,Math.round(s/60));
+let wakeLock=null, audioCtx=null, beepNodes=[], restT=null, liveT=null, finishArm=null;
+const active = () => state.settings.active || null;
+async function keepAwake(on){ try{ if(on&&"wakeLock" in navigator){ wakeLock=await navigator.wakeLock.request("screen"); } else if(!on&&wakeLock){ await wakeLock.release(); wakeLock=null; } }catch(e){} }
+function startSession(w,dk){
+  if(active()) return;
+  state.settings.active={w,dk,start:Date.now(),rest:0}; save(); keepAwake(true); unlockAudio();
+  toast("Antrenman başladı, sayaç çalışıyor"); renderLive(); render();
+}
+function finishSession(){
+  const a=active(); if(!a) return;
+  if(finishArm==null){ finishArm=setTimeout(()=>{ finishArm=null; renderLive(); },3000); renderLive(); return; }
+  clearTimeout(finishArm); finishArm=null; stopRest(false);
+  const sec=(Date.now()-a.start)/1000, doc=weekDoc(a.w);
+  (doc.sess ||= {})[a.dk]={start:a.start,end:Date.now(),sec:Math.round(sec),rest:Math.round(a.rest||0)};
+  (doc.done ||= {})[a.dk]=true; state.settings.active=null; save(); keepAwake(false);
+  toast(`Antrenman bitti: ${mins(sec)} dk, ${mins(a.rest||0)} dk dinlenme`); renderLive(); render();
+}
+function renderLive(){
+  const el=document.getElementById("live"), a=active();
+  clearInterval(liveT);
+  if(!a){ el.hidden=true; return; }
+  const d=DAYS.find(x=>"d"+x.k===a.dk);
+  el.hidden=false;
+  el.innerHTML=`<span class="rec" aria-hidden="true"></span><div class="lt"><b class="num" id="live-t">${hms((Date.now()-a.start)/1000)}</b><span>${d?d.n+" · "+d.type:"Antrenman"}</span></div>
+   <button class="btn ${finishArm?"danger":"dark"}" data-live="finish">${finishArm?"Emin misin? Bitir":"Antrenmanı bitir"}</button>`;
+  liveT=setInterval(()=>{ const t=document.getElementById("live-t"); if(t) t.textContent=hms((Date.now()-active().start)/1000); },1000);
+}
+document.getElementById("live").addEventListener("click",e=>{ if(e.target.closest("[data-live=finish]")) finishSession(); });
+
+function unlockAudio(){ try{ audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }catch(e){} }
+function scheduleBeep(inSec){
+  cancelBeep(); if(!audioCtx) return;
+  const t0=audioCtx.currentTime+Math.max(0,inSec);
+  [0,.28,.56].forEach((o,i)=>{ const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
+    osc.type="sine"; osc.frequency.value=i===2?1320:880; g.gain.setValueAtTime(0,t0+o); g.gain.linearRampToValueAtTime(.35,t0+o+.02); g.gain.linearRampToValueAtTime(0,t0+o+(i===2?.45:.2));
+    osc.connect(g).connect(audioCtx.destination); osc.start(t0+o); osc.stop(t0+o+.5); beepNodes.push(osc); });
+}
+function cancelBeep(){ beepNodes.forEach(n=>{ try{ n.stop(); }catch(e){} }); beepNodes=[]; }
+let rest=null; // {end,total,label,began}
+function startRest(sec,label){
+  unlockAudio(); if(rest) addRestTime();
+  rest={end:Date.now()+sec*1000,total:sec,label,began:Date.now()}; scheduleBeep(sec); drawRest(); clearInterval(restT); restT=setInterval(tickRest,200);
+}
+function addRestTime(){ const a=active(); if(a&&rest){ a.rest=(a.rest||0)+Math.min(rest.total,(Date.now()-rest.began)/1000); save(); } }
+function stopRest(count=true){ if(!rest) return; if(count) addRestTime(); cancelBeep(); clearInterval(restT); rest=null; const el=document.getElementById("rest"); el.classList.remove("fin"); el.hidden=true; }
+function tickRest(){
+  if(!rest) return; const left=(rest.end-Date.now())/1000;
+  if(left<=0){ clearInterval(restT); addRestTime(); const el=document.getElementById("rest"); el.classList.add("fin");
+    document.getElementById("rest-t").textContent="0:00"; document.getElementById("rest-l").textContent="Dinlenme bitti, sıradaki sete!";
+    document.getElementById("rest-ring").style.strokeDashoffset=0;
+    try{ navigator.vibrate&&navigator.vibrate([250,120,250]); }catch(e){}
+    rest=null; setTimeout(()=>{ if(!rest){ el.classList.remove("fin"); el.hidden=true; } },1800); return; }
+  document.getElementById("rest-t").textContent=hms(left);
+  document.getElementById("rest-ring").style.strokeDashoffset=(1-left/rest.total)*RING;
+}
+const RING=2*Math.PI*44;
+function drawRest(){
+  const el=document.getElementById("rest"); el.hidden=false; el.classList.remove("fin");
+  el.innerHTML=`<div class="rest-card" role="timer" aria-live="off"><svg viewBox="0 0 100 100" class="ring" aria-hidden="true"><circle cx="50" cy="50" r="44" class="trk"/><circle cx="50" cy="50" r="44" class="prg" id="rest-ring" style="stroke-dasharray:${RING};stroke-dashoffset:0"/></svg>
+   <div class="rest-info"><span class="label">Dinlenme</span><b class="num" id="rest-t">${hms(rest.total)}</b><span class="small" id="rest-l">${esc(rest.label)}</span></div>
+   <div class="rest-btns"><button class="btn" data-rest="plus">+15 sn</button><button class="btn dark" data-rest="skip">Geç</button></div></div>`;
+}
+document.getElementById("rest").addEventListener("click",e=>{ const b=e.target.closest("[data-rest]"); if(!b||!rest) return;
+  if(b.dataset.rest==="plus"){ rest.end+=15000; rest.total+=15; scheduleBeep((rest.end-Date.now())/1000); tickRest(); }
+  else stopRest(); });
+
+/* ===================== ÇİZİM & OLAYLAR ===================== */
+const TITLES={home:"Özet",train:"Antrenman",food:"Beslenme",progress:"Gelişim",body:"Vücut"};
+function render(){
+  const v=document.getElementById("view"), y=window.scrollY;
+  document.getElementById("ttl").textContent=TITLES[ui.tab];
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===ui.tab));
+  const a=document.activeElement, aid=a&&a.id, sel=a&&a.selectionStart;
+  v.innerHTML = ui.tab==="home"?renderHome(): ui.tab==="train"?renderTrain(): ui.tab==="food"?renderFood(): ui.tab==="progress"?renderProgress(): renderBody();
+  if(aid){ const n=document.getElementById(aid); if(n){ n.focus({preventScroll:true}); try{ if(sel!=null) n.setSelectionRange(sel,sel); }catch(e){} } }
+  window.scrollTo(0,y);
+}
+document.querySelector("nav.tabs").addEventListener("click",e=>{ const b=e.target.closest("button[data-tab]"); if(!b) return;
+  ui.tab=b.dataset.tab; render(); window.scrollTo(0,0); });
+const view=document.getElementById("view");
+view.addEventListener("click",e=>{
+  const t=e.target.closest("[data-act]"); if(!t) return; const a=t.dataset.act;
+  if(a==="wk"){ ui.week=t.dataset.w; ui.dayIdx= ui.week===monday(TODAY)?(parse(TODAY).getDay()+6)%7:0; render(); window.scrollTo(0,0); }
+  else if(a==="day"){ ui.dayIdx=+t.dataset.i; render(); }
+  else if(a==="copy"){ const p=prevEntry(t.dataset.w,t.dataset.k,t.dataset.id); if(!p) return; const en=entry(t.dataset.w,t.dataset.k,t.dataset.id);
+    p.e.sets.forEach((s,i)=>{ en.sets[i] ||= {}; if(s&&s.kg&&!en.sets[i].kg) en.sets[i].kg=s.kg; }); save(); render(); }
+  else if(a==="fd"){ ui.foodDate=addDays(ui.foodDate,+t.dataset.d); render(); }
+  else if(a==="water"){ const d=dayDoc(ui.foodDate), i=+t.dataset.i; d.water = (d.water===i+1)? i : i+1; save(); render(); }
+  else if(a==="opt"){ const d=dayDoc(ui.foodDate); (d.meals[t.dataset.m] ||= {}).opt=+t.dataset.i; save(); render(); }
+  else if(a==="bw"){ ui.bodyWeek=t.dataset.w; state.pendingDel=null; render(); window.scrollTo(0,0); }
+  else if(a==="pdel"){ e.preventDefault(); state.pendingDel=t.dataset.k; render(); }
+  else if(a==="pdelno"){ state.pendingDel=null; render(); }
+  else if(a==="pdelyes"){ const b=state.body[ui.bodyWeek], k=state.pendingDel, p=b?.photos?.[k];
+    if(p){ delete b.photos[k]; save(); if(p.pid) tx("photos","readwrite",st=>st.delete(p.pid)).catch(()=>{}); }
+    state.pendingDel=null; render(); toast("Fotoğraf silindi"); }
+  else if(a==="zoom"){ const lb=document.createElement("div"); lb.className="lightbox"; lb.innerHTML=`<img src="${t.getAttribute("src")}" alt="">`; lb.onclick=()=>lb.remove(); document.body.appendChild(lb); }
+  else if(a==="metsel"){ ui.metSel=t.dataset.k; render(); }
+  else if(a==="startsess"){ startSession(t.dataset.w,t.dataset.k); }
+  else if(a==="rest"){ startRest(+t.dataset.s,t.dataset.n); }
+  else if(a==="gotrain"){ ui.tab="train"; ui.week=monday(TODAY); ui.dayIdx=(parse(TODAY).getDay()+6)%7; const td=DAYS[ui.dayIdx]; if((td.ex.length||td.wod)&&!active()) startSession(ui.week,"d"+td.k); else render(); window.scrollTo(0,0); }
+  else if(a==="gobody"){ ui.tab="body"; ui.bodyWeek=monday(TODAY); render(); window.scrollTo(0,0); }
+  else if(a==="gofood"){ ui.tab="food"; ui.foodDate=TODAY; render(); window.scrollTo(0,0); }
+  else if(a==="mfocus"){ const n=document.getElementById("m-"+ui.bodyWeek+"-"+t.dataset.k); if(n){ n.focus(); n.scrollIntoView({block:"center",behavior:"smooth"}); } }
+  else if(a==="backup"){ exportBackup(); }
+});
+view.addEventListener("input",e=>{
+  const t=e.target, a=t.dataset.act; if(!a) return;
+  if(a==="set"){ const en=entry(t.dataset.w,t.dataset.k,t.dataset.id); const i=+t.dataset.i; (en.sets[i] ||= {})[t.dataset.f]=t.value.trim(); save(); }
+  else if(a==="note"){ entry(t.dataset.w,t.dataset.k,t.dataset.id).note=t.value; save(); }
+  else if(a==="met"){ (state.body[ui.bodyWeek] ||= {})[t.dataset.k]=t.value.trim(); save();
+    const on=num(t.value)!=null; t.closest(".mrow")?.classList.toggle("on",on); view.querySelector(`.mk[data-k="${t.dataset.k}"]`)?.classList.toggle("on",on); }
+  else if(a==="wod" && t.tagName==="INPUT"){ const day=DAYS[ui.dayIdx]; entry(ui.week,"d"+day.k,"wod").res=t.value.trim(); save(); }
+});
+view.addEventListener("change",e=>{
+  const t=e.target, a=t.dataset.act; if(!a) return;
+  if(a==="done"){ const d=weekDoc(ui.week); (d.done ||= {})[t.dataset.k]=t.checked; save(); render(); if(t.checked) toast("Harika, antrenman işaretlendi"); }
+  else if(a==="eat"){ const d=dayDoc(ui.foodDate); (d.meals[t.dataset.m] ||= {}).eaten=t.checked; if(d.meals[t.dataset.m].opt==null) d.meals[t.dataset.m].opt=0; save(); render(); }
+  else if(a==="start"){ if(t.value){ state.settings.start=t.value; save(); render(); } }
+  else if(a==="exsel"){ ui.exSel=t.value; render(); }
+  else if(a==="wod" && t.tagName==="SELECT"){ const day=DAYS[ui.dayIdx]; entry(ui.week,"d"+day.k,"wod").alt=!!t.value; save(); }
+  else if(a==="photo" && t.files&&t.files[0]){ addPhoto(t.dataset.k,t.files[0]); }
+  else if(a==="restore" && t.files&&t.files[0]){ importBackup(t.files[0]); }
+});
+
+render();
+const splashStart=Date.now();
+function hideSplash(){ const sp=document.getElementById("splash"); if(!sp||sp.dataset.closing) return; sp.dataset.closing="1";
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches, wait=Math.max(0,(reduce?500:1500)-(Date.now()-splashStart));
+  setTimeout(()=>{ sp.classList.add("out"); setTimeout(()=>sp.remove(),500); },wait); }
+setTimeout(hideSplash,4000);
+loadAll().finally(hideSplash).then(()=>{ if(!state.settings.start){ state.settings.start=monday(TODAY); save(); } setSync("ok","Telefonda kayıtlı"); render(); renderLive(); if(active()) keepAwake(true); })
+  .catch(()=>{ setSync("","Kayıt açılamadı"); toast("Bu tarayıcı kayıt tutmaya izin vermiyor (gizli sekme olabilir)."); });
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+
+</body></html>
