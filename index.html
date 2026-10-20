@@ -15,23 +15,23 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: tek sütunlu telefon uygulaması; açılışta logo ekranı, üstte başlık, altta sabit 5 sekmeli gezinme.
-   Renkler kullanıcının paletinden: Thunder Lime #E5E12C, Midnight Slate #40494E, Silver Mist #D9D9D6, siyah, beyaz. */
+   Renkler kullanıcının paletinden: Turuncu #FF5100 (2026-10-20, Thunder Lime yerine), Midnight Slate #40494E, Silver Mist #D9D9D6, siyah, beyaz. */
 :root{
   padding-top:env(safe-area-inset-top,0px);
-  --lime:#E5E12C; --on-lime:#000000; --slate:#40494E; --mist:#D9D9D6;
+  --lime:#FF5100; --on-lime:#000000; --slate:#40494E; --mist:#D9D9D6;
   --bg:#F2F2F0; --surface:#FFFFFF; --ink:#000000; --muted:#40494E; --line:#D9D9D6; --field:#F2F2F0;
-  --accent:#000000; --lime-soft:#F4F3B8; --nav:#000000; --nav-ink:#D9D9D6;
+  --accent:#000000; --lime-soft:#FFE3D6; --nav:#000000; --nav-ink:#D9D9D6;
   --warn:#9A5208; --warn-soft:#FBEEDD; --good:#24703F;
   --body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r:16px; color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#000000; --surface:#1A1E21; --ink:#FFFFFF; --muted:#A3A9AC; --line:#40494E; --field:#0E1113;
-  --accent:#E5E12C; --lime-soft:#2B2C0E; --nav:#111416; --nav-ink:#A3A9AC;
+  --accent:#FF5100; --lime-soft:#3A1C0C; --nav:#111416; --nav-ink:#A3A9AC;
   --warn:#F0A85A; --warn-soft:#33261A; --good:#7FD39B; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#000000; --surface:#1A1E21; --ink:#FFFFFF; --muted:#A3A9AC; --line:#40494E; --field:#0E1113;
-  --accent:#E5E12C; --lime-soft:#2B2C0E; --nav:#111416; --nav-ink:#A3A9AC;
+  --accent:#FF5100; --lime-soft:#3A1C0C; --nav:#111416; --nav-ink:#A3A9AC;
   --warn:#F0A85A; --warn-soft:#33261A; --good:#7FD39B; color-scheme:dark}
 html{-webkit-text-size-adjust:100%}
 *{box-sizing:border-box}
@@ -245,15 +245,15 @@ nav.tabs button.on{color:var(--on-lime);background:var(--lime)}
 .rest-card{width:100%;max-width:536px;background:#000;color:#fff;border-radius:20px;padding:12px 14px;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.35);border:1px solid #40494E}
 .ring{width:64px;height:64px;transform:rotate(-90deg)}
 .ring .trk{fill:none;stroke:#40494E;stroke-width:9}
-.ring .prg{fill:none;stroke:#E5E12C;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
+.ring .prg{fill:none;stroke:#FF5100;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
 .rest-info{display:flex;flex-direction:column;min-width:0;line-height:1.2}
 .rest-info .label{color:#A3A9AC}
 .rest-info b{font-size:30px;font-weight:700;letter-spacing:-.02em}
 .rest-info .small{color:#D9D9D6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rest-btns{display:flex;flex-direction:column;gap:6px}
 .rest-btns .btn{min-height:36px;padding:6px 12px;background:#1A1E21;border-color:#40494E;color:#fff}
-.rest-btns .btn.dark{background:#E5E12C;border-color:#E5E12C;color:#000}
-.restov.fin .rest-card{background:#E5E12C;color:#000;border-color:#E5E12C}
+.rest-btns .btn.dark{background:#FF5100;border-color:#FF5100;color:#000}
+.restov.fin .rest-card{background:#FF5100;color:#000;border-color:#FF5100}
 .restov.fin .rest-info .label,.restov.fin .rest-info .small{color:#000}
 .restov.fin .ring .prg{stroke:#000}.restov.fin .ring .trk{stroke:#000;opacity:.2}
 @media (prefers-reduced-motion: no-preference){.restov:not([hidden]) .rest-card{animation:pop .25s ease-out}@keyframes pop{from{transform:translateY(20px);opacity:0}}.restov.fin .rest-card{animation:pulse .5s ease-in-out 3}@keyframes pulse{50%{transform:scale(1.03)}}}
@@ -262,7 +262,7 @@ nav.tabs button.on{color:var(--on-lime);background:var(--lime)}
 #splash .lg{position:relative;width:min(78vw,340px)}
 #splash img{display:block;width:100%;height:auto}
 #splash .lg-dark{display:none}
-#splash .sweep{position:absolute;left:0;bottom:-14px;height:6px;width:100%;background:#E5E12C;border-radius:9px;transform-origin:left;transform:scaleX(0)}
+#splash .sweep{position:absolute;left:0;bottom:-14px;height:6px;width:100%;background:#FF5100;border-radius:9px;transform-origin:left;transform:scaleX(0)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #splash{background:#000}:root:not([data-theme="light"]) #splash .lg-light{display:none}:root:not([data-theme="light"]) #splash .lg-dark{display:block}}
 :root[data-theme="dark"] #splash{background:#000} :root[data-theme="dark"] #splash .lg-light{display:none} :root[data-theme="dark"] #splash .lg-dark{display:block}
 @media (prefers-reduced-motion: no-preference){
