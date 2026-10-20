@@ -169,6 +169,11 @@ ul.items{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
 .chart .ar{fill:var(--lime);opacity:.28}
 .chart .pt{fill:var(--surface);stroke:var(--accent);stroke-width:2}
 .chart .pt.last{fill:var(--lime);stroke:var(--ink)}
+.chart .br{fill:var(--slate);opacity:.55} .chart .br.cur{fill:var(--lime);opacity:1;stroke:var(--ink);stroke-width:1}
+.cdrow{display:grid;grid-template-columns:minmax(0,1fr) 92px 40px;gap:8px;align-items:center}
+.cdrow .unit{position:relative} .cdrow .unit::after{content:"dk";position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+.cdrow .unit .in{padding-right:30px}
+.cdsum{display:flex;justify-content:space-between;gap:8px;font-size:13px}
 .chart .vl{fill:var(--ink);font-size:11px;font-weight:600;font-family:var(--body)}
 select.in{font-size:15px}
 .tbl{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
@@ -533,7 +538,8 @@ function renderTrain(){
   if(day.ex.length||day.wod){
     h+=`<label class="check"><input type="checkbox" id="done-${dk}" data-act="done" data-k="${dk}" ${doc.done?.[dk]?"checked":""}> Bu antrenmanı tamamladım</label>`;
   }
-  h+=historyList("wk",Object.keys(state.logs).filter(k=>Object.keys(state.logs[k].entries||{}).length||Object.values(state.logs[k].done||{}).some(Boolean)),w);
+  h+=cardioCard(addDays(w,ui.dayIdx));
+  h+=historyList("wk",[...new Set(Object.keys(state.logs).filter(k=>Object.keys(state.logs[k].entries||{}).length||Object.values(state.logs[k].done||{}).some(Boolean)).concat(Object.keys(state.daily).filter(d=>cardioMin(d)>0).map(monday)))],w);
   h+=`<details class="card"><summary>Temel kurallar</summary><dl class="rules">${RULES.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join("")}</dl></details>
   <div class="card row between"><div><div class="label">Program başlangıcı</div><div class="small muted">Hafta numarası, barfiks aşaması ve WOD sırası buna göre hesaplanır.</div></div>
   <input type="date" class="in" style="max-width:170px" id="start-date" data-act="start" value="${esc(state.settings.start||monday(TODAY))}"></div>
@@ -575,6 +581,50 @@ function exCard(w,dk,x,no){
 
 /* ===================== BESLENME ===================== */
 function dayDoc(d){ return (state.daily[d] ||= {meals:{},water:0}); }
+/* ===================== KARDİYO ===================== */
+const CARDIO_MACHINES = ["Koşu bandı","Eliptik","Bisiklet","Kürek","Merdiven","Yürüyüş"];
+const cardioList = d => (state.daily[d]?.cardio||[]).filter(c=>c&&(c.m||num(c.min)!=null));
+const cardioMin = d => cardioList(d).reduce((a,c)=>a+(num(c.min)||0),0);
+const weekCardio = w => Array.from({length:7},(_,i)=>cardioMin(addDays(w,i))).reduce((a,b)=>a+b,0);
+function usedMachines(){ const set=new Set(CARDIO_MACHINES); Object.values(state.daily).forEach(d=>(d.cardio||[]).forEach(c=>{ if(c&&c.m&&c.m.trim()) set.add(c.m.trim()); })); return [...set]; }
+function cardioCard(date){
+  const list=state.daily[date]?.cardio||[], tot=cardioMin(date);
+  let h=`<div class="card stack" style="gap:10px"><div class="row between"><div><h3>Kardiyo</h3><div class="hint">${date===TODAY?"Bugün":fmt(date)} · alet ve süre</div></div>${tot?`<b class="num">${fmtN(tot)} dk</b>`:""}</div>`;
+  list.forEach((c,i)=>{ h+=`<div class="cdrow"><input class="in" id="cd-${date}-${i}-m" data-act="cardio" data-d="${date}" data-i="${i}" data-f="m" value="${esc(c.m||"")}" placeholder="Alet" list="cd-machines" autocomplete="off">
+    <span class="unit"><input class="in" id="cd-${date}-${i}-min" data-act="cardio" data-d="${date}" data-i="${i}" data-f="min" value="${esc(c.min||"")}" placeholder="0" inputmode="numeric"></span>
+    <button class="btn icon" data-act="cddel" data-d="${date}" data-i="${i}" aria-label="Sil">×</button></div>`; });
+  h+=`<datalist id="cd-machines">${usedMachines().map(m=>`<option value="${esc(m)}">`).join("")}</datalist>
+   <div><div class="label" style="margin-bottom:6px">${list.length?"Bir alet daha ekle":"Alet seç"}</div><div class="chips">${usedMachines().map(m=>`<button class="chip" data-act="cdadd" data-d="${date}" data-m="${esc(m)}">+ ${esc(m)}</button>`).join("")}<button class="chip" data-act="cdadd" data-d="${date}" data-m="">+ Diğer</button></div></div></div>`;
+  return h;
+}
+function barChart(pts,unit){
+  if(!pts.length) return "";
+  const W=340,H=170,L=36,R=10,T=20,B=26, hi0=Math.max(...pts.map(p=>p.y),10), step=niceStep(hi0/4), hi=Math.ceil(hi0*1.1/step)*step;
+  const Y=v=>T+(hi-v)*(H-T-B)/hi, bw=(W-L-R)/pts.length;
+  let g=""; for(let v=0; v<=hi+1e-9; v+=step){ g+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${L-6}" y="${Y(v)+3}" text-anchor="end">${fmtN(v)}</text>`; }
+  pts.forEach((p,i)=>{ const w=Math.min(bw*.64,34), x=L+i*bw+(bw-w)/2;
+    g+=`<rect class="br ${p.cur?"cur":""}" x="${x.toFixed(1)}" y="${Y(p.y).toFixed(1)}" width="${w.toFixed(1)}" height="${(Y(0)-Y(p.y)).toFixed(1)}" rx="3"><title>${esc(p.x)}: ${fmtN(p.y)} ${unit}</title></rect>
+    <text class="axis" x="${(x+w/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${esc(p.x)}</text>`;
+    if(p.y) g+=`<text class="axis" x="${(x+w/2).toFixed(1)}" y="${(Y(p.y)-5).toFixed(1)}" text-anchor="middle">${fmtN(p.y)}</text>`; });
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Haftalık kardiyo dakikaları">${g}</svg></div>`;
+}
+function cardioProgress(){
+  const cw=monday(TODAY), days=Object.keys(state.daily).filter(d=>cardioMin(d)>0).sort();
+  let h=`<div class="card stack"><div class="row between"><h3>Kardiyo</h3><span class="hint">Haftalık toplam dakika</span></div>`;
+  if(!days.length) return h+`<div class="empty">Antrenman sekmesinde günün kardiyosunu (alet ve dakika) girdikçe grafik burada oluşur.</div></div>`;
+  let first=monday(days[0]); const n=Math.min(10,Math.round((parse(cw)-parse(first))/6048e5)+1);
+  const pts=Array.from({length:n},(_,i)=>{ const w=addDays(cw,-7*(n-1-i)); return {x:"H"+progWeek(w),y:weekCardio(w),cur:w===cw,w}; });
+  h+=barChart(pts,"dk");
+  const byM={}; for(let i=0;i<7;i++) cardioList(addDays(cw,i)).forEach(c=>{ const k=(c.m||"Diğer").trim()||"Diğer"; byM[k]=(byM[k]||0)+(num(c.min)||0); });
+  const sess=Array.from({length:7},(_,i)=>cardioMin(addDays(cw,i))>0).filter(Boolean).length;
+  h+=`<div class="row between small"><span class="muted">Bu hafta ${sess} gün</span><b class="num">${fmtN(weekCardio(cw))} dk</b></div>`;
+  const ms=Object.entries(byM).sort((a,b)=>b[1]-a[1]);
+  if(ms.length) h+=`<div class="stack" style="gap:4px">${ms.map(([m,v])=>`<div class="cdsum"><span>${esc(m)}</span><b class="num">${fmtN(v)} dk</b></div>`).join("")}</div>`;
+  const recent=days.slice(-7).reverse();
+  h+=`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Tarih</th><th>Alet</th><th>Süre</th></tr></thead><tbody>
+   ${recent.map(d=>`<tr><td>${fmt(d)}</td><td>${esc(cardioList(d).map(c=>c.m||"–").join(", "))}</td><td>${fmtN(cardioMin(d))} dk</td></tr>`).join("")}</tbody></table></div>`;
+  return h+`</div>`;
+}
 function renderFood(){
   const d=ui.foodDate, doc=state.daily[d]||{meals:{},water:0}, y=state.daily[addDays(d,-1)];
   const now=new Date(), mins=now.getHours()*60+now.getMinutes();
@@ -754,7 +804,8 @@ function renderHome(){
    </div>
    <div class="card stack" style="gap:10px"><div class="row between"><h3>Bu haftanın antrenmanı</h3><span class="hint num">${weekRange(cw)}</span></div>
     <div class="wkdots">${daysFor(cw).map((d,i)=>{ const date=addDays(cw,i), isRest=!d.ex.length&&!d.wod;
-      return `<div><i class="${done[d.id]?"done":""} ${isRest?"rest":""} ${date===TODAY?"today":""}">${done[d.id]?"✓":isRest?"":d.type[0]}</i>${d.s}</div>`;}).join("")}</div></div>
+      return `<div><i class="${done[d.id]?"done":""} ${isRest?"rest":""} ${date===TODAY?"today":""}">${done[d.id]?"✓":isRest?"":d.type[0]}</i>${d.s}</div>`;}).join("")}</div>
+    <div class="row between hint"><span>Kardiyo bu hafta</span><b class="num">${fmtN(weekCardio(cw))} dk${(()=>{ const n=Array.from({length:7},(_,i)=>cardioMin(addDays(cw,i))>0).filter(Boolean).length; return n?` · ${n} gün`:""; })()}</b></div></div>
    <div class="card stack" style="gap:10px" data-act="gofood"><div class="row between"><h3>Bu haftanın beslenmesi</h3><b class="num">%${pct}</b></div>
     <div class="bar"><i style="width:${pct}%"></i></div>
     <div class="row between hint"><span>${eaten} / ${possible} öğün işaretlendi</span><span class="num">Su ort. ${days?fmtN(water/days):"0"} L / gün</span></div>
@@ -820,7 +871,7 @@ function renderProgress(){
     h+=`<div class="row between small"><span class="muted">${ser.length} hafta kayıt</span><b class="num" style="color:var(${last>=first?"--good":"--warn"})">${last-first>=0?"+":""}${fmtN(last-first)} kg</b></div>
     <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Hafta</th><th>Tarih</th><th>En yüksek</th><th>Tekrar</th></tr></thead><tbody>
     ${ser.slice().reverse().map(p=>`<tr><td>${p.x}</td><td>${fmt(p.w)}</td><td>${fmtN(p.y)} kg</td><td>${esc(p.r||"–")}</td></tr>`).join("")}</tbody></table></div>`; }
-  h+=`</div><div class="card stack"><div class="row between"><h3>Beden ölçüleri</h3></div>
+  h+=`</div>${cardioProgress()}<div class="card stack"><div class="row between"><h3>Beden ölçüleri</h3></div>
    <div class="chips">${METRICS.map(([k,n])=>`<button class="chip ${k===ui.metSel?"on":""}" data-act="metsel" data-k="${k}">${n}</button>`).join("")}</div>`;
   const [mk,mn,mu]=METRICS.find(m=>m[0]===ui.metSel);
   const ms=Object.keys(state.body).sort().filter(w=>num(state.body[w][mk])!=null).map(w=>({w,x:"H"+progWeek(w),y:num(state.body[w][mk])}));
@@ -935,6 +986,9 @@ view.addEventListener("click",e=>{
   else if(a==="gofood"){ ui.tab="food"; ui.foodDate=TODAY; render(); window.scrollTo(0,0); }
   else if(a==="mfocus"){ const n=document.getElementById("m-"+ui.bodyWeek+"-"+t.dataset.k); if(n){ n.focus(); n.scrollIntoView({block:"center",behavior:"smooth"}); } }
   else if(a==="backup"){ exportBackup(); }
+  else if(a==="cdadd"){ const d=dayDoc(t.dataset.d); (d.cardio ||= []).push({m:t.dataset.m,min:""}); save(); render();
+    const i=d.cardio.length-1, n=document.getElementById(`cd-${t.dataset.d}-${i}-${t.dataset.m?"min":"m"}`); if(n) n.focus(); }
+  else if(a==="cddel"){ const d=dayDoc(t.dataset.d); d.cardio.splice(+t.dataset.i,1); save(); render(); }
 });
 view.addEventListener("input",e=>{
   const t=e.target, a=t.dataset.act; if(!a) return;
@@ -942,6 +996,7 @@ view.addEventListener("input",e=>{
   else if(a==="note"){ entry(t.dataset.w,t.dataset.k,t.dataset.id).note=t.value; save(); }
   else if(a==="met"){ (state.body[ui.bodyWeek] ||= {})[t.dataset.k]=t.value.trim(); save();
     const on=num(t.value)!=null; t.closest(".mrow")?.classList.toggle("on",on); view.querySelector(`.mk[data-k="${t.dataset.k}"]`)?.classList.toggle("on",on); }
+  else if(a==="cardio"){ const d=dayDoc(t.dataset.d); ((d.cardio ||= [])[+t.dataset.i] ||= {})[t.dataset.f]=t.value.trim(); save(); }
   else if(a==="wod" && t.tagName==="INPUT"){ const day=daysFor(ui.week)[ui.dayIdx]; entry(ui.week,day.id,"wod").res=t.value.trim(); save(); }
 });
 view.addEventListener("change",e=>{
