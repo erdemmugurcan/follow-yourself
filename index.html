@@ -114,6 +114,10 @@ details.card[open] summary{margin-bottom:8px}
 .chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 12px;font-size:13px}
 .chip.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 ul.items{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
+ul.items.kc li span:first-child{flex:1;min-width:0} ul.items.kc li{display:flex;gap:10px;justify-content:space-between}
+ul.items.kc li .num{color:var(--muted);font-size:13px;white-space:nowrap;align-self:flex-start;padding-top:1px}
+ul.items.kc li.tot{list-style:none;margin:4px 0 0 -18px;padding-top:6px;border-top:1px solid var(--line);font-size:13.5px;font-weight:600}
+ul.items.kc li.tot b{color:var(--ink);font-size:13.5px}
 .eat{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px}
 .eat input{width:20px;height:20px;accent-color:var(--lime)}
 .water{display:flex;gap:4px;flex-wrap:wrap}
@@ -382,7 +386,7 @@ const RULES = [
  ["Kalori açığı","Amaç kası korumak. Ağırlıklar birkaç hafta sabit kalırsa normal; düşmüyorsa program çalışıyor."],
  ["Ölçüm","Her pazartesi sabah, tuvaletten sonra aç karna tartı ve bel ölçümü."]
 ];
-const MEALS = [
+const MEALS_V1 = [
  {id:"wake",t:"Uyanınca",h:[6,0],n:"Sabah kahvesi",opts:[{n:"Standart",it:["1 bardak sade kahve","1 çay kaşığı hindistan cevizi yağı"]}]},
  {id:"bf",t:"08.00–09.00",h:[8,0],n:"Kahvaltı",opts:[
    {n:"Menü 1",it:["50 g pirinç unu","2 yumurta","1 ölçek protein tozu","1 muz ya da 100 g ananas"]},
@@ -404,7 +408,23 @@ const MEALS = [
  {id:"snack2",t:"21.30–22.00",h:[21,30],n:"Gece ara öğünü",note:"Yatmadan en geç 2 saat önce.",opts:[
    {n:"Yoğurt",it:["100 ml Activia sade probiyotik yoğurt (salatalık-nane ile cacık olabilir)","1 tatlı kaşığı zeytinyağı"]}]}
 ];
-const FOOD_NOTES = ["Salatada mısır, havuç ve nar ekşisi yok.","Zeytinyağını yemek piştikten sonra ekle.","Antrenmanı yemekten 1 saat sonra veya yemekten 45 dk önce yap.","Hızlı bir metabolizma için öğün atlama."];
+// 21 Ekim 2026'dan itibaren tek seçenekli program; kalori değerleri kullanıcının verdiği gibi.
+const MEALS_V2 = [
+ {id:"wake",t:"Uyanınca",h:[6,0],n:"Sabah kahvesi",opts:[{n:"Standart",it:["1 bardak sade kahve","1 çay kaşığı hindistan cevizi yağı"]}]},
+ {id:"bf",t:"08.00–09.00",h:[8,0],n:"Kahvaltı",opts:[{n:"Standart",it:[["50 g pirinç unu",180],["2 adet yumurta",129],["1 ölçek protein tozu",135],["1 adet muz",105],["15 g şekersiz fıstık ezmesi",83]]}]},
+ {id:"lunch",t:"12.00–12.30",h:[12,0],n:"Öğle yemeği",opts:[{n:"Standart",it:[["200 g tavuk göğüs eti",220],["75 g basmati pirinç",265],"Salata"]}]},
+ {id:"snack1",t:"15.30–16.00",h:[15,30],n:"Ara öğün",opts:[{n:"Standart",it:[["1 konserve süzülmüş ton balığı ya da 1 konserve hindi fileto",161]]}]},
+ {id:"pre",t:"Antrenmandan önce",n:"Spor öncesi",opts:[{n:"Standart",it:[["1 adet pirinç patlağı",58],["10 g bal",30],["100 g ananas",48]]}]},
+ {id:"post",t:"Antrenmandan sonra",n:"Spor sonrası",opts:[{n:"Standart",it:[["200 g tavuk göğüs eti",220],["75 g basmati pirinç",265],"Salata"]}]},
+ {id:"snack2",t:"21.30–22.00",h:[21,30],n:"Son öğün",note:"Yatmadan en geç 2 saat önce.",opts:[{n:"Standart",it:[["1 adet Danone Activia",62]]}]}
+];
+const MEAL_PLANS = [{from:"0000-01-01",meals:MEALS_V1},{from:"2026-10-21",meals:MEALS_V2}];
+const mealsFor = d => MEAL_PLANS.filter(x=>x.from<=d).pop().meals;
+const itName = i => Array.isArray(i)?i[0]:i, itKcal = i => Array.isArray(i)?i[1]:0;
+const mealKcal = o => o.it.reduce((a,i)=>a+itKcal(i),0);
+const FOOD_NOTES_V1 = ["Salatada mısır, havuç ve nar ekşisi yok.","Zeytinyağını yemek piştikten sonra ekle.","Antrenmanı yemekten 1 saat sonra veya yemekten 45 dk önce yap.","Hızlı bir metabolizma için öğün atlama."];
+const FOOD_NOTES_V2 = ["Salatada mısır, havuç ve nar ekşisi yok.","Hızlı bir metabolizma için öğün atlama."];
+const foodNotesFor = d => d>="2026-10-21"?FOOD_NOTES_V2:FOOD_NOTES_V1;
 const WATER_GOAL = 14; // 14 × 250 ml = 3,5 L
 const PHOTO_SLOTS = [["on","Ön"],["arka","Arka"],["sag","Sağ"],["sol","Sol"]];
 
@@ -628,23 +648,29 @@ function cardioProgress(){
 function renderFood(){
   const d=ui.foodDate, doc=state.daily[d]||{meals:{},water:0}, y=state.daily[addDays(d,-1)];
   const now=new Date(), mins=now.getHours()*60+now.getMinutes();
-  let cur=null; if(d===TODAY){ MEALS.forEach(m=>{ if(mins>=m.h[0]*60+m.h[1]-30) cur=m.id; }); }
+  const MEALS=mealsFor(d);
+  let cur=null; if(d===TODAY){ MEALS.forEach(m=>{ if(m.h&&mins>=m.h[0]*60+m.h[1]-30) cur=m.id; }); }
   const eaten=MEALS.filter(m=>doc.meals?.[m.id]?.eaten).length;
+  const optOf=m=>m.opts[doc.meals?.[m.id]?.opt??0]||m.opts[0];
+  const kcalPlan=MEALS.reduce((a,m)=>a+mealKcal(optOf(m)),0), kcalEaten=MEALS.filter(m=>doc.meals?.[m.id]?.eaten).reduce((a,m)=>a+mealKcal(optOf(m)),0);
   let h=`<div class="stack"><div class="weeknav"><button class="btn icon" data-act="fd" data-d="-1" aria-label="Önceki gün">‹</button>
    <div class="mid"><b>${d===TODAY?"Bugün":fmt(d)}</b><span class="small muted">${WEEKDAYS[(parse(d).getDay()+6)%7][1]} · ${eaten}/${MEALS.length} öğün</span></div>
    <button class="btn icon" data-act="fd" data-d="1" aria-label="Sonraki gün">›</button></div>
    <div class="card stack" style="gap:8px"><div class="row between"><span class="label">Su</span><b class="num">${((doc.water||0)*0.25).toFixed(2).replace(".",",")} / 3,5 L</b></div>
    <div class="water">${Array.from({length:WATER_GOAL},(_,i)=>`<button class="glass ${i<(doc.water||0)?"on":""}" data-act="water" data-i="${i}" aria-label="${(i+1)*250} ml"></button>`).join("")}</div>
-   <div class="hint">Her bardak 250 ml. Hedef 3–3,5 litre.</div></div>`;
+   <div class="hint">Her bardak 250 ml. Hedef 3–3,5 litre.</div></div>
+   ${kcalPlan?`<div class="card stack" style="gap:8px"><div class="row between"><span class="label">Kalori</span><b class="num">${kcalEaten} / ${kcalPlan} kcal</b></div>
+   <div class="bar"><i style="width:${Math.round(kcalEaten/kcalPlan*100)}%"></i></div><div class="hint">Yedim işaretlediğin öğünlerin toplamı. Kahve ve salata hariç.</div></div>`:""}`;
   MEALS.forEach(m=>{ const md=doc.meals?.[m.id]||{}, sel=md.opt??0, o=m.opts[sel]||m.opts[0];
     const rep = m.noRepeat && y?.meals?.[m.id]?.eaten && y.meals[m.id].opt===sel;
     h+=`<div class="meal ${cur===m.id?"now":""} ${md.eaten?"eaten":""}"><div class="row between"><div><div class="meal-time num">${m.t}</div><h3>${m.n}</h3></div>
      <label class="eat"><input type="checkbox" id="eat-${m.id}" data-act="eat" data-m="${m.id}" ${md.eaten?"checked":""}> Yedim</label></div>
      ${m.opts.length>1?`<div class="chips">${m.opts.map((op,i)=>`<button class="chip ${i===sel?"on":""}" data-act="opt" data-m="${m.id}" data-i="${i}">${esc(op.n)}</button>`).join("")}</div>`:""}
-     <ul class="items">${o.it.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+     ${mealKcal(o)?`<ul class="items kc">${o.it.map(i=>`<li><span>${esc(itName(i))}</span>${itKcal(i)?`<span class="num">${itKcal(i)} kcal</span>`:""}</li>`).join("")}<li class="tot"><span>Toplam</span><b class="num">${mealKcal(o)} kcal</b></li></ul>`
+       :`<ul class="items">${o.it.map(i=>`<li>${esc(itName(i))}</li>`).join("")}</ul>`}
      ${m.note?`<div class="hint">${esc(m.note)}</div>`:""}
      ${m.noRepeat?(rep?`<div class="warnbox">Dün de bu menüyü yedin. Üst üste aynı menü olmasın.</div>`:`<div class="hint">Üst üste aynı menüyü seçme.</div>`):""}</div>`; });
-  h+=`<div class="card"><span class="label">Notlar</span><ul class="items small" style="margin-top:6px">${FOOD_NOTES.map(n=>`<li>${n}</li>`).join("")}</ul></div></div>`;
+  h+=`<div class="card"><span class="label">Notlar</span><ul class="items small" style="margin-top:6px">${foodNotesFor(d).map(n=>`<li>${n}</li>`).join("")}</ul></div></div>`;
   return h;
 }
 
@@ -784,9 +810,9 @@ function renderHome(){
   const done=state.logs[cw]?.done||{}, lifts=["d1","d2","d4","d5"], liftDone=lifts.filter(k=>done[k]).length;
   // beslenme
   let eaten=0, possible=0, water=0, days=0; const dayBars=[];
-  for(let i=0;i<7;i++){ const d=addDays(cw,i), doc=state.daily[d], n=MEALS.filter(m=>doc?.meals?.[m.id]?.eaten).length;
-    if(d<=TODAY){ eaten+=n; possible+=MEALS.length; water+=(doc?.water||0)*0.25; days++; }
-    dayBars.push({d,n,future:d>TODAY}); }
+  for(let i=0;i<7;i++){ const d=addDays(cw,i), doc=state.daily[d], ML=mealsFor(d), n=ML.filter(m=>doc?.meals?.[m.id]?.eaten).length;
+    if(d<=TODAY){ eaten+=n; possible+=ML.length; water+=(doc?.water||0)*0.25; days++; }
+    dayBars.push({d,n,all:ML.length,future:d>TODAY}); }
   const pct= possible? Math.round(eaten/possible*100):0;
   let h=`<div class="stack">
    <div class="hello"><span class="date">${parse(TODAY).getDate()} ${AY_UZUN[parse(TODAY).getMonth()]} ${td.n}${pw>0?` · Program ${pw}. hafta`:""}</span><h2>${greet}</h2></div>
@@ -809,7 +835,7 @@ function renderHome(){
    <div class="card stack" style="gap:10px" data-act="gofood"><div class="row between"><h3>Bu haftanın beslenmesi</h3><b class="num">%${pct}</b></div>
     <div class="bar"><i style="width:${pct}%"></i></div>
     <div class="row between hint"><span>${eaten} / ${possible} öğün işaretlendi</span><span class="num">Su ort. ${days?fmtN(water/days):"0"} L / gün</span></div>
-    <div class="wkdots">${dayBars.map((x,i)=>`<div><i class="${x.n===MEALS.length?"done":""} ${x.d===TODAY?"today":""}" style="${x.future?"opacity:.4":""}">${x.future?"":x.n}</i>${WEEKDAYS[i][0]}</div>`).join("")}</div></div>
+    <div class="wkdots">${dayBars.map((x,i)=>`<div><i class="${x.n===x.all?"done":""} ${x.d===TODAY?"today":""}" style="${x.future?"opacity:.4":""}">${x.future?"":x.n}</i>${WEEKDAYS[i][0]}</div>`).join("")}</div></div>
   </div>`;
   return h;
 }
