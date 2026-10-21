@@ -171,6 +171,10 @@ ul.items.kc li.tot b{color:var(--ink);font-size:13.5px}
 .thumbs img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;cursor:zoom-in;display:block}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:grid;place-items:center;z-index:50;padding:20px}
 .lightbox img{max-height:88vh;max-width:100%;border-radius:10px}
+.report-ov{position:fixed;inset:0;background:#000;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.report-ov img{max-width:100%;max-height:calc(100vh - 150px);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.report-btns{display:flex;gap:10px;width:100%;max-width:420px} .report-btns .btn{flex:1}
+.report-card .row{gap:10px} .report-card .btn{flex:1}
 /* grafik */
 .chart svg{width:100%;height:auto;display:block}
 .chart .grid{stroke:var(--line);stroke-width:1}
@@ -518,7 +522,8 @@ function weekHead(w,act){
   const cur=monday(TODAY), pw=progWeek(w), past=w!==cur;
   return `<div class="weekhead ${past?"past":""}"><div><span class="label">${past?"Geçmiş hafta":"Bu hafta"}</span><b>${pw>0?pw+". hafta":"Program öncesi"}</b></div>
    <span class="wk-range num">${weekRange(w)}</span></div>
-   ${past?`<div class="pastbar"><span>Geçmiş haftayı görüntülüyorsun. Değişiklikler o haftaya kaydedilir.</span><button class="btn dark" data-act="${act}" data-w="${cur}">Bu haftaya dön</button></div>`:""}`;
+   ${past?`<div class="pastbar"><span>Geçmiş haftayı görüntülüyorsun. Değişiklikler o haftaya kaydedilir.</span><button class="btn dark" data-act="${act}" data-w="${cur}">Bu haftaya dön</button></div>
+   <button class="btn" data-act="report" data-w="${w}">Bu haftanın raporu</button>`:""}`;
 }
 function historyList(act,weeks,sel){
   const cur=monday(TODAY); weeks=weeks.filter(k=>k<cur).sort().reverse();
@@ -855,6 +860,8 @@ function renderHome(){
     <div class="wkdots">${daysFor(cw).map((d,i)=>{ const date=addDays(cw,i), isRest=!d.ex.length&&!d.wod;
       return `<div><i class="${done[d.id]?"done":""} ${isRest?"rest":""} ${date===TODAY?"today":""}">${done[d.id]?"✓":isRest?"":d.type[0]}</i>${d.s}</div>`;}).join("")}</div>
     <div class="row between hint"><span>Kardiyo bu hafta</span><b class="num">${fmtN(weekCardio(cw))} dk${(()=>{ const n=Array.from({length:7},(_,i)=>cardioMin(addDays(cw,i))>0).filter(Boolean).length; return n?` · ${n} gün`:""; })()}</b></div></div>
+   <div class="card stack report-card" style="gap:10px"><div><h3>Haftalık rapor</h3><div class="hint">${parse(TODAY).getDay()===0?"Haftan bitti, raporun hazır. Paylaşabilir ya da fotoğraflarına kaydedebilirsin.":"Antrenman, kardiyo, kalori ve kilonun haftalık özeti; paylaşılabilir görsel."}</div></div>
+    <div class="row"><button class="btn primary" data-act="report" data-w="${cw}">${parse(TODAY).getDay()===0?"Bu haftanın raporu":"Bu hafta (şu ana kadar)"}</button><button class="btn" data-act="report" data-w="${addDays(cw,-7)}">Geçen hafta</button></div></div>
    <div class="card stack" style="gap:10px" data-act="gofood"><div class="row between"><h3>Bu haftanın beslenmesi</h3><b class="num">%${pct}</b></div>
     <div class="bar"><i style="width:${pct}%"></i></div>
     <div class="row between hint"><span>${eaten} / ${possible} öğün işaretlendi</span><span class="num">Su ort. ${days?fmtN(water/days):"0"} L / gün</span></div>
@@ -998,6 +1005,100 @@ document.getElementById("rest").addEventListener("click",e=>{ const b=e.target.c
   else stopRest(); });
 
 /* ===================== ÇİZİM & OLAYLAR ===================== */
+/* ===================== HAFTALIK RAPOR ===================== */
+const EX_NAMES = (()=>{ const m={}; WORKOUT_LIST.forEach(d=>(d.ex||[]).forEach(x=>{ m[x.id]=x.n; })); return m; })();
+function weekBest(w){ const m={}; for(const [k,e] of Object.entries(state.logs[w]?.entries||{})){ const id=k.split("_").slice(1).join("_");
+  (e.sets||[]).forEach(s=>{ const kg=num(s&&s.kg); if(kg!=null&&(m[id]==null||kg>m[id])) m[id]=kg; }); } return m; }
+function weekStats(w){
+  const cur=monday(TODAY), last = w===cur ? TODAY : addDays(w,6);
+  const days=Array.from({length:7},(_,i)=>addDays(w,i)).filter(d=>d<=last);
+  const lg=state.logs[w]||{}, done=lg.done||{}, sched=daysFor(w);
+  const lifts=["d1","d2","d4","d5"], liftDone=lifts.filter(k=>done[k]).length;
+  const trainMin=Object.values(lg.sess||{}).reduce((a,x)=>a+(x.sec||0),0)/60;
+  const cardio=days.reduce((a,d)=>a+cardioMin(d),0), cardioDays=days.filter(d=>cardioMin(d)>0).length;
+  let mealsDone=0, mealsAll=0, kcalSum=0, kcalDays=0, plan=0, waterSum=0, extras=0, extraK=0;
+  days.forEach(d=>{ const doc=state.daily[d], ML=mealsFor(d), optOf=m=>m.opts[doc?.meals?.[m.id]?.opt??0]||m.opts[0];
+    const eaten=ML.filter(m=>doc?.meals?.[m.id]?.eaten); mealsDone+=eaten.length; mealsAll+=ML.length; waterSum+=waterMl(doc);
+    const p=ML.reduce((a,m)=>a+mealKcal(optOf(m)),0), ex=extraList(doc); extras+=ex.length; extraK+=extraKcal(doc);
+    if(p){ plan=p; if(eaten.length||ex.length){ kcalSum+=eaten.reduce((a,m)=>a+mealKcal(optOf(m)),0)+extraKcal(doc); kcalDays++; } } });
+  const kilo=num(state.body[w]?.kilo), kPrev=num(prevBody(w,"kilo"));
+  // geçen ölçüme göre ağırlığı artan hareketler
+  const now=weekBest(w), ups=[];
+  Object.entries(now).forEach(([id,kg])=>{ for(let i=1;i<=8;i++){ const p=weekBest(addDays(w,-7*i))[id]; if(p!=null){ if(kg>p) ups.push({id,n:EX_NAMES[id]||id,from:p,to:kg}); break; } } });
+  ups.sort((a,b)=>(b.to-b.from)-(a.to-a.from));
+  return {w,days:days.length,sched,done,liftDone,crossfit:!!done.d6,trainMin,cardio,cardioDays,mealsDone,mealsAll,kcalAvg:kcalDays?kcalSum/kcalDays:null,plan,
+    water:days.length?waterSum/days.length/1000:0,extras,extraK,kilo,kPrev,ups,hasEx:Object.keys(now).length>0,partial:w===cur&&parse(TODAY).getDay()!==0};
+}
+let LOGO_IMG=null;
+function loadLogo(){ if(LOGO_IMG) return Promise.resolve(LOGO_IMG); return new Promise(r=>{ const i=new Image(); i.onload=()=>{ LOGO_IMG=i; r(i); }; i.onerror=()=>r(null); i.src="logo-dark.png"; }); }
+async function drawReport(w){
+  const S=weekStats(w), W=1080, H=1350, P=72, OR="#FF5100", MUTE="#9AA1A5", TILE="#15181A";
+  try{ await Promise.all(["400","600","700","800"].map(x=>document.fonts.load(`${x} 40px Poppins`))); }catch(e){}
+  const logo=await loadLogo();
+  const c=document.createElement("canvas"); c.width=W; c.height=H; const g=c.getContext("2d");
+  const F=(wt,px)=>`${wt} ${px}px Poppins, -apple-system, system-ui, sans-serif`;
+  const T=(txt,x,y,font,col,al="left")=>{ g.font=font; g.fillStyle=col; g.textAlign=al; g.fillText(txt,x,y); };
+  const fit=(txt,font,max)=>{ g.font=font; if(g.measureText(txt).width<=max) return txt; while(txt.length>1&&g.measureText(txt+"…").width>max) txt=txt.slice(0,-1); return txt+"…"; };
+  const RR=(x,y,w,h,r,fill,stroke,dash)=>{ g.beginPath(); g.roundRect(x,y,w,h,r); if(fill){ g.fillStyle=fill; g.fill(); } if(stroke){ g.setLineDash(dash||[]); g.strokeStyle=stroke; g.lineWidth=3; g.stroke(); g.setLineDash([]); } };
+  g.fillStyle="#000"; g.fillRect(0,0,W,H);
+  if(logo){ const lw=300; g.drawImage(logo,P,P,lw,lw*logo.height/logo.width); }
+  const pw=progWeek(w);
+  T(S.partial?"HAFTALIK RAPOR · DEVAM EDİYOR":"HAFTALIK RAPOR",W-P,P+22,F(600,24),OR,"right");
+  T(pw>0?pw+". hafta":"Program öncesi",W-P,P+86,F(700,56),"#fff","right");
+  const a=parse(w), b=parse(addDays(w,6));
+  T(`${a.getDate()} ${AY[a.getMonth()]} – ${b.getDate()} ${AY[b.getMonth()]} ${b.getFullYear()}`,W-P,P+128,F(400,28),MUTE,"right");
+  g.fillStyle=OR; g.fillRect(P,236,W-2*P,5);
+  // gün noktaları
+  const cw=(W-2*P)/7;
+  S.sched.forEach((d,i)=>{ const cx=P+cw*i+cw/2, cy=318, r=40, date=addDays(w,i), isRest=!d.ex.length&&!d.wod, ok=S.done[d.id], future=date>TODAY;
+    g.beginPath(); g.arc(cx,cy,r,0,Math.PI*2);
+    if(ok){ g.fillStyle=OR; g.fill(); T("✓",cx,cy+14,F(700,38),"#000","center"); }
+    else { g.setLineDash(isRest?[8,8]:[]); g.strokeStyle=future?"#2C3134":"#4A5256"; g.lineWidth=3; g.stroke(); g.setLineDash([]);
+      if(!isRest) T(d.type[0],cx,cy+12,F(600,32),future?"#4A5256":"#D9D9D6","center"); }
+    T(d.s,cx,cy+r+38,F(500,24),MUTE,"center"); });
+  // kutular
+  const tiles=[
+    ["ANTRENMAN",`${S.liftDone}`,"/ 4",[S.trainMin?`${Math.round(S.trainMin)} dk`:"Ağırlık günleri", S.crossfit?"CrossFit ✓":""].filter(Boolean).join(" · ")],
+    ["KARDİYO",fmtN(S.cardio),"dk",S.cardioDays?`${S.cardioDays} gün`:"Kayıt yok"],
+    ["KALORİ",S.kcalAvg!=null?Math.round(S.kcalAvg).toLocaleString("tr-TR"):"–",S.kcalAvg!=null?"kcal/gün":"",S.plan?`Plan ${S.plan.toLocaleString("tr-TR")}${S.extras?` · ${S.extras} ekstra`:""}`:"Kalori takibi yok"],
+    ["BESLENME",S.mealsAll?"%"+Math.round(S.mealsDone/S.mealsAll*100):"–","",`${S.mealsDone} / ${S.mealsAll} öğün`],
+    ["SU",fmtN(S.water),"L/gün","Hedef 3,5 L"],
+    ["KİLO",S.kilo!=null?fmtN(S.kilo):"–",S.kilo!=null?"kg":"",S.kilo==null?"Bu hafta ölçüm yok":S.kPrev!=null?`${S.kilo-S.kPrev>0?"+":""}${fmtN(S.kilo-S.kPrev)} kg önceki ölçüme göre`:"İlk ölçüm"]
+  ];
+  const tw=(W-2*P-24)/2, th=172, ty0=440;
+  tiles.forEach(([lab,val,unit,sub],i)=>{ const x=P+(i%2)*(tw+24), y=ty0+Math.floor(i/2)*(th+22);
+    RR(x,y,tw,th,28,TILE); T(lab,x+30,y+46,F(600,22),MUTE);
+    T(val,x+30,y+112,F(700,60),"#fff"); g.font=F(700,60); const vw=g.measureText(val).width;
+    if(unit) T(unit,x+30+vw+10,y+112,F(500,26),MUTE);
+    let col=MUTE; if(lab==="KİLO"&&S.kilo!=null&&S.kPrev!=null) col=S.kilo<=S.kPrev?"#7FD39B":"#F0A85A";
+    T(fit(sub,F(400,22),tw-60),x+30,y+148,F(400,22),col); });
+  // gelişen hareketler
+  let y=ty0+3*(th+22)+40;
+  T("AĞIRLIĞI ARTAN HAREKETLER",P,y,F(600,22),OR); y+=18;
+  if(!S.ups.length){ T(S.hasEx?"Bu hafta artış yok. Aynı ağırlıkla tekrarları yükselt.":"Bu hafta ağırlık kaydı yok.",P,y+42,F(400,28),"#D9D9D6"); }
+  S.ups.slice(0,3).forEach((u,i)=>{ const yy=y+44+i*54; const right=`${fmtN(u.from)} → ${fmtN(u.to)} kg`;
+    g.font=F(700,28); const rw=g.measureText(right).width;
+    T(fit(u.n,F(500,28),W-2*P-rw-30),P,yy,F(500,28),"#fff"); T(right,W-P,yy,F(700,28),OR,"right"); });
+  if(S.ups.length>3) T(`+${S.ups.length-3} hareket daha`,P,y+44+3*54,F(400,22),MUTE);
+  // alt bilgi
+  g.fillStyle="#1F2326"; g.fillRect(P,H-104,W-2*P,2);
+  T("Follow Yourself.",P,H-56,F(700,26),"#fff");
+  T(S.partial?`${fmt(TODAY)} itibarıyla`:`${fmt(addDays(w,6))} kapanışı`,W-P,H-56,F(400,24),MUTE,"right");
+  return c;
+}
+async function openReport(w){
+  toast("Rapor hazırlanıyor…");
+  const c=await drawReport(w), pw=progWeek(w), name=`follow-yourself-${pw>0?pw+"-hafta":w}.png`;
+  const ov=document.createElement("div"); ov.className="report-ov"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Haftalık rapor");
+  ov.innerHTML=`<img alt="Haftalık rapor, ${weekRange(w)}" src="${c.toDataURL("image/png")}"><div class="report-btns"><button class="btn primary" data-r="share">Paylaş / Kaydet</button><button class="btn" data-r="close">Kapat</button></div>`;
+  ov.addEventListener("click",async e=>{ const b=e.target.closest("[data-r]"); if(!b){ if(e.target===ov) ov.remove(); return; }
+    if(b.dataset.r==="close"){ ov.remove(); return; }
+    const blob=await new Promise(r=>c.toBlob(r,"image/png")), file=new File([blob],name,{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],title:"Haftalık rapor"}); return; }catch(err){ if(err.name==="AbortError") return; } }
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); });
+  document.body.appendChild(ov);
+}
+
 const TITLES={home:"Özet",train:"Antrenman",food:"Beslenme",progress:"Gelişim",body:"Vücut"};
 function render(){
   const v=document.getElementById("view"), y=window.scrollY;
@@ -1037,6 +1138,7 @@ view.addEventListener("click",e=>{
   else if(a==="gofood"){ ui.tab="food"; ui.foodDate=TODAY; render(); window.scrollTo(0,0); }
   else if(a==="mfocus"){ const n=document.getElementById("m-"+ui.bodyWeek+"-"+t.dataset.k); if(n){ n.focus(); n.scrollIntoView({block:"center",behavior:"smooth"}); } }
   else if(a==="backup"){ exportBackup(); }
+  else if(a==="report"){ openReport(t.dataset.w); }
   else if(a==="cdadd"){ const d=dayDoc(t.dataset.d); (d.cardio ||= []).push({m:t.dataset.m,min:""}); save(); render();
     const i=d.cardio.length-1, n=document.getElementById(`cd-${t.dataset.d}-${i}-${t.dataset.m?"min":"m"}`); if(n) n.focus(); }
   else if(a==="cddel"){ const d=dayDoc(t.dataset.d); d.cardio.splice(+t.dataset.i,1); save(); render(); }
