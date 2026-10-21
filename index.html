@@ -123,6 +123,12 @@ ul.items.kc li.tot b{color:var(--ink);font-size:13.5px}
 .water{display:flex;gap:4px;flex-wrap:wrap}
 .glass{width:30px;height:38px;border:1.5px solid var(--muted);border-radius:4px 4px 9px 9px;background:transparent;padding:0}
 .glass.on{background:var(--lime);border-color:var(--lime)}
+.glass{width:38px;height:46px}
+.glass.half{background:linear-gradient(to top,var(--lime) 50%,transparent 50%)}
+.bar i.over{background:var(--warn)}
+.exrow{display:grid;grid-template-columns:minmax(0,1fr) 104px 40px;gap:8px;align-items:center}
+.exrow .unit{position:relative} .exrow .unit::after{content:"kcal";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none}
+.exrow .unit .in{padding-right:40px}
 .warnbox{font-size:12.5px;background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:7px 11px}
 .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .mgrid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500}
@@ -414,7 +420,7 @@ const MEALS_V2 = [
  {id:"bf",t:"08.00–09.00",h:[8,0],n:"Kahvaltı",opts:[{n:"Standart",it:[["50 g pirinç unu",180],["2 adet yumurta",129],["1 ölçek protein tozu",135],["1 adet muz",105],["15 g şekersiz fıstık ezmesi",83]]}]},
  {id:"lunch",t:"12.00–12.30",h:[12,0],n:"Öğle yemeği",opts:[{n:"Standart",it:[["200 g tavuk göğüs eti",220],["75 g basmati pirinç",265],"Salata"]}]},
  {id:"snack1",t:"15.30–16.00",h:[15,30],n:"Ara öğün",opts:[{n:"Standart",it:[["1 konserve süzülmüş ton balığı ya da 1 konserve hindi fileto",161]]}]},
- {id:"pre",t:"Antrenmandan önce",n:"Spor öncesi",opts:[{n:"Standart",it:[["1 adet pirinç patlağı",58],["10 g bal",30],["100 g ananas",48]]}]},
+ {id:"pre",t:"Antrenmandan önce",n:"Spor öncesi",opts:[{n:"Standart",it:[["15 g pirinç patlağı",58],["10 g bal",30],["100 g ananas",48]]}]},
  {id:"post",t:"Antrenmandan sonra",n:"Spor sonrası",opts:[{n:"Standart",it:[["200 g tavuk göğüs eti",220],["75 g basmati pirinç",265],"Salata"]}]},
  {id:"snack2",t:"21.30–22.00",h:[21,30],n:"Son öğün",note:"Yatmadan en geç 2 saat önce.",opts:[{n:"Standart",it:[["1 adet Danone Activia",62]]}]}
 ];
@@ -425,7 +431,11 @@ const mealKcal = o => o.it.reduce((a,i)=>a+itKcal(i),0);
 const FOOD_NOTES_V1 = ["Salatada mısır, havuç ve nar ekşisi yok.","Zeytinyağını yemek piştikten sonra ekle.","Antrenmanı yemekten 1 saat sonra veya yemekten 45 dk önce yap.","Hızlı bir metabolizma için öğün atlama."];
 const FOOD_NOTES_V2 = ["Salatada mısır, havuç ve nar ekşisi yok.","Hızlı bir metabolizma için öğün atlama."];
 const foodNotesFor = d => d>="2026-10-21"?FOOD_NOTES_V2:FOOD_NOTES_V1;
-const WATER_GOAL = 14; // 14 × 250 ml = 3,5 L
+const WATER_GOAL = 7, GLASS_ML = 500; // 7 × 500 ml = 3,5 L
+// Eski kayıtlarda su 250 ml'lik bardak sayısı (water), yenilerde ml (ml) olarak tutulur.
+const waterMl = doc => doc ? (doc.ml ?? (doc.water||0)*250) : 0;
+const extraList = doc => (doc?.extra||[]).filter(x=>x&&(x.t||num(x.kcal)!=null));
+const extraKcal = doc => extraList(doc).reduce((a,x)=>a+(num(x.kcal)||0),0);
 const PHOTO_SLOTS = [["on","Ön"],["arka","Arka"],["sag","Sağ"],["sol","Sol"]];
 
 /* ===================== TARİH YARDIMCILARI ===================== */
@@ -645,6 +655,11 @@ function cardioProgress(){
    ${recent.map(d=>`<tr><td>${fmt(d)}</td><td>${esc(cardioList(d).map(c=>c.m||"–").join(", "))}</td><td>${fmtN(cardioMin(d))} dk</td></tr>`).join("")}</tbody></table></div>`;
   return h+`</div>`;
 }
+function kcalHint(m,x){ return `Yedim işaretlediğin öğünler${x?` (${m}) + ekstralar (${x})`:""}. Kahve ve salata hariç.`; }
+function updateKcal(){ const d=ui.foodDate, doc=state.daily[d]||{}, ML=mealsFor(d), optOf=m=>m.opts[doc.meals?.[m.id]?.opt??0]||m.opts[0];
+  const plan=ML.reduce((a,m)=>a+mealKcal(optOf(m)),0), mk=ML.filter(m=>doc.meals?.[m.id]?.eaten).reduce((a,m)=>a+mealKcal(optOf(m)),0), x=extraKcal(doc), tot=mk+x;
+  const n=document.getElementById("kc-num"), b=document.getElementById("kc-bar"), h=document.getElementById("kc-hint"), et=document.getElementById("ex-tot");
+  if(n) n.textContent=`${tot} / ${plan} kcal`; if(b){ b.style.width=Math.min(100,Math.round(tot/plan*100))+"%"; b.classList.toggle("over",tot>plan); } if(h) h.textContent=kcalHint(mk,x); if(et) et.textContent=x?`+${x} kcal`:""; }
 function renderFood(){
   const d=ui.foodDate, doc=state.daily[d]||{meals:{},water:0}, y=state.daily[addDays(d,-1)];
   const now=new Date(), mins=now.getHours()*60+now.getMinutes();
@@ -652,15 +667,16 @@ function renderFood(){
   let cur=null; if(d===TODAY){ MEALS.forEach(m=>{ if(m.h&&mins>=m.h[0]*60+m.h[1]-30) cur=m.id; }); }
   const eaten=MEALS.filter(m=>doc.meals?.[m.id]?.eaten).length;
   const optOf=m=>m.opts[doc.meals?.[m.id]?.opt??0]||m.opts[0];
-  const kcalPlan=MEALS.reduce((a,m)=>a+mealKcal(optOf(m)),0), kcalEaten=MEALS.filter(m=>doc.meals?.[m.id]?.eaten).reduce((a,m)=>a+mealKcal(optOf(m)),0);
+  const kcalPlan=MEALS.reduce((a,m)=>a+mealKcal(optOf(m)),0), kcalMeals=MEALS.filter(m=>doc.meals?.[m.id]?.eaten).reduce((a,m)=>a+mealKcal(optOf(m)),0);
+  const kx=extraKcal(doc), kcalEaten=kcalMeals+kx;
   let h=`<div class="stack"><div class="weeknav"><button class="btn icon" data-act="fd" data-d="-1" aria-label="Önceki gün">‹</button>
    <div class="mid"><b>${d===TODAY?"Bugün":fmt(d)}</b><span class="small muted">${WEEKDAYS[(parse(d).getDay()+6)%7][1]} · ${eaten}/${MEALS.length} öğün</span></div>
    <button class="btn icon" data-act="fd" data-d="1" aria-label="Sonraki gün">›</button></div>
-   <div class="card stack" style="gap:8px"><div class="row between"><span class="label">Su</span><b class="num">${((doc.water||0)*0.25).toFixed(2).replace(".",",")} / 3,5 L</b></div>
-   <div class="water">${Array.from({length:WATER_GOAL},(_,i)=>`<button class="glass ${i<(doc.water||0)?"on":""}" data-act="water" data-i="${i}" aria-label="${(i+1)*250} ml"></button>`).join("")}</div>
-   <div class="hint">Her bardak 250 ml. Hedef 3–3,5 litre.</div></div>
-   ${kcalPlan?`<div class="card stack" style="gap:8px"><div class="row between"><span class="label">Kalori</span><b class="num">${kcalEaten} / ${kcalPlan} kcal</b></div>
-   <div class="bar"><i style="width:${Math.round(kcalEaten/kcalPlan*100)}%"></i></div><div class="hint">Yedim işaretlediğin öğünlerin toplamı. Kahve ve salata hariç.</div></div>`:""}`;
+   <div class="card stack" style="gap:8px"><div class="row between"><span class="label">Su</span><b class="num">${String(Math.round(waterMl(doc)/10)/100).replace(".",",")} / 3,5 L</b></div>
+   <div class="water">${Array.from({length:WATER_GOAL},(_,i)=>{ const ml=waterMl(doc); return `<button class="glass ${ml>=(i+1)*GLASS_ML?"on":ml>i*GLASS_ML?"half":""}" data-act="water" data-i="${i}" aria-label="${(i+1)*GLASS_ML} ml"></button>`; }).join("")}</div>
+   <div class="hint">Her bardak 500 ml. Hedef 3–3,5 litre.</div></div>
+   ${kcalPlan?`<div class="card stack" style="gap:8px"><div class="row between"><span class="label">Kalori</span><b class="num" id="kc-num">${kcalEaten} / ${kcalPlan} kcal</b></div>
+   <div class="bar"><i id="kc-bar" class="${kcalEaten>kcalPlan?"over":""}" style="width:${Math.min(100,Math.round(kcalEaten/kcalPlan*100))}%"></i></div><div class="hint" id="kc-hint">${kcalHint(kcalMeals,kx)}</div></div>`:""}`;
   MEALS.forEach(m=>{ const md=doc.meals?.[m.id]||{}, sel=md.opt??0, o=m.opts[sel]||m.opts[0];
     const rep = m.noRepeat && y?.meals?.[m.id]?.eaten && y.meals[m.id].opt===sel;
     h+=`<div class="meal ${cur===m.id?"now":""} ${md.eaten?"eaten":""}"><div class="row between"><div><div class="meal-time num">${m.t}</div><h3>${m.n}</h3></div>
@@ -670,7 +686,14 @@ function renderFood(){
        :`<ul class="items">${o.it.map(i=>`<li>${esc(itName(i))}</li>`).join("")}</ul>`}
      ${m.note?`<div class="hint">${esc(m.note)}</div>`:""}
      ${m.noRepeat?(rep?`<div class="warnbox">Dün de bu menüyü yedin. Üst üste aynı menü olmasın.</div>`:`<div class="hint">Üst üste aynı menüyü seçme.</div>`):""}</div>`; });
-  h+=`<div class="card"><span class="label">Notlar</span><ul class="items small" style="margin-top:6px">${foodNotesFor(d).map(n=>`<li>${n}</li>`).join("")}</ul></div></div>`;
+  h+=`<div class="card"><span class="label">Notlar</span><ul class="items small" style="margin-top:6px">${foodNotesFor(d).map(n=>`<li>${n}</li>`).join("")}</ul></div>`;
+  const ex=doc.extra||[];
+  h+=`<div class="card stack" style="gap:10px"><div class="row between"><div><h3>Ekstralar</h3><div class="hint">Program dışı yediklerin</div></div>${kx?`<b class="num" id="ex-tot">+${kx} kcal</b>`:`<b class="num" id="ex-tot"></b>`}</div>
+   ${ex.map((x,i)=>`<div class="exrow"><input class="in" id="ex-${d}-${i}-t" data-act="extra" data-i="${i}" data-f="t" value="${esc(x.t||"")}" placeholder="Ne yedin? (ör. 2 dilim pizza)">
+    <span class="unit"><input class="in" id="ex-${d}-${i}-k" data-act="extra" data-i="${i}" data-f="kcal" value="${esc(x.kcal||"")}" placeholder="?" inputmode="numeric"></span>
+    <button class="btn icon" data-act="exdel" data-i="${i}" aria-label="Sil">×</button></div>`).join("")}
+   <button class="btn" data-act="exadd">+ Ekstra ekle</button>
+   ${ex.length?`<div class="hint">Kaloriyi bilmiyorsan boş bırakabilirsin. Girdiğin kalori günün toplamına eklenir.</div>`:""}</div></div>`;
   return h;
 }
 
@@ -811,7 +834,7 @@ function renderHome(){
   // beslenme
   let eaten=0, possible=0, water=0, days=0; const dayBars=[];
   for(let i=0;i<7;i++){ const d=addDays(cw,i), doc=state.daily[d], ML=mealsFor(d), n=ML.filter(m=>doc?.meals?.[m.id]?.eaten).length;
-    if(d<=TODAY){ eaten+=n; possible+=ML.length; water+=(doc?.water||0)*0.25; days++; }
+    if(d<=TODAY){ eaten+=n; possible+=ML.length; water+=waterMl(doc)/1000; days++; }
     dayBars.push({d,n,all:ML.length,future:d>TODAY}); }
   const pct= possible? Math.round(eaten/possible*100):0;
   let h=`<div class="stack">
@@ -995,7 +1018,9 @@ view.addEventListener("click",e=>{
   else if(a==="copy"){ const p=prevEntry(t.dataset.w,t.dataset.k,t.dataset.id); if(!p) return; const en=entry(t.dataset.w,t.dataset.k,t.dataset.id);
     p.e.sets.forEach((s,i)=>{ en.sets[i] ||= {}; if(s&&s.kg&&!en.sets[i].kg) en.sets[i].kg=s.kg; }); save(); render(); }
   else if(a==="fd"){ ui.foodDate=addDays(ui.foodDate,+t.dataset.d); render(); }
-  else if(a==="water"){ const d=dayDoc(ui.foodDate), i=+t.dataset.i; d.water = (d.water===i+1)? i : i+1; save(); render(); }
+  else if(a==="water"){ const d=dayDoc(ui.foodDate), i=+t.dataset.i, cur=waterMl(d), full=(i+1)*GLASS_ML; d.ml = cur===full ? i*GLASS_ML : full; delete d.water; save(); render(); }
+  else if(a==="exadd"){ const d=dayDoc(ui.foodDate); (d.extra ||= []).push({t:"",kcal:""}); save(); render(); const n=document.getElementById(`ex-${ui.foodDate}-${d.extra.length-1}-t`); if(n) n.focus(); }
+  else if(a==="exdel"){ const d=dayDoc(ui.foodDate); d.extra.splice(+t.dataset.i,1); save(); render(); }
   else if(a==="opt"){ const d=dayDoc(ui.foodDate); (d.meals[t.dataset.m] ||= {}).opt=+t.dataset.i; save(); render(); }
   else if(a==="bw"){ ui.bodyWeek=t.dataset.w; state.pendingDel=null; render(); window.scrollTo(0,0); }
   else if(a==="pdel"){ e.preventDefault(); state.pendingDel=t.dataset.k; render(); }
@@ -1022,6 +1047,7 @@ view.addEventListener("input",e=>{
   else if(a==="note"){ entry(t.dataset.w,t.dataset.k,t.dataset.id).note=t.value; save(); }
   else if(a==="met"){ (state.body[ui.bodyWeek] ||= {})[t.dataset.k]=t.value.trim(); save();
     const on=num(t.value)!=null; t.closest(".mrow")?.classList.toggle("on",on); view.querySelector(`.mk[data-k="${t.dataset.k}"]`)?.classList.toggle("on",on); }
+  else if(a==="extra"){ const d=dayDoc(ui.foodDate); ((d.extra ||= [])[+t.dataset.i] ||= {})[t.dataset.f]=t.value; save(); updateKcal(); }
   else if(a==="cardio"){ const d=dayDoc(t.dataset.d); ((d.cardio ||= [])[+t.dataset.i] ||= {})[t.dataset.f]=t.value.trim(); save(); }
   else if(a==="wod" && t.tagName==="INPUT"){ const day=daysFor(ui.week)[ui.dayIdx]; entry(ui.week,day.id,"wod").res=t.value.trim(); save(); }
 });
